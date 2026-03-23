@@ -1,0 +1,228 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "role": { "type": "string", "enum": ["user", "admin", "provider"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "email", "role", "createdAt"]
+    },
+    "UserPublic": {
+      "title": "UserPublic",
+      "description": "Public user profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "role": { "type": "string", "enum": ["user", "admin", "provider"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "role", "createdAt"]
+    },
+    "Location": {
+      "title": "Location",
+      "description": "Important places in Gili Trawangan",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["sunset", "clinic", "police", "bike", "snorkeling", "port", "restaurant"] },
+        "position": { 
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Latitude and Longitude"
+        },
+        "desc": { "type": "string" },
+        "createdBy": { "type": "string", "description": "UID of the user who created this" }
+      },
+      "required": ["name", "type", "position", "desc", "createdBy"]
+    },
+    "BookingItem": {
+      "title": "BookingItem",
+      "description": "Services available for booking",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "time": { "type": "string" },
+        "price": { "type": "string" },
+        "provider": { "type": "string" },
+        "providerId": { "type": "string", "description": "UID of the provider" },
+        "icon": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["type", "title", "time", "price", "provider", "providerId"]
+    },
+    "Thread": {
+      "title": "Thread",
+      "description": "Forum discussion thread",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string", "enum": ["general", "tips", "food", "transport", "party", "help"] },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "repliesCount": { "type": "number" },
+        "likesCount": { "type": "number" },
+        "likedBy": { "type": "array", "items": { "type": "string" }, "description": "Array of user UIDs who liked this thread" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "category", "authorId", "authorName", "repliesCount", "likesCount", "createdAt"]
+    },
+    "AudioRoom": {
+      "title": "AudioRoom",
+      "description": "Live audio chat room",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "hostId": { "type": "string" },
+        "listenersCount": { "type": "number" },
+        "speakers": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "hostId", "listenersCount", "speakers", "active", "createdAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A comment on a forum thread",
+      "type": "object",
+      "properties": {
+        "threadId": { "type": "string" },
+        "parentId": { "type": "string", "description": "ID of the parent comment if this is a reply" },
+        "content": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "repliesCount": { "type": "number", "description": "Number of replies to this comment" },
+        "likesCount": { "type": "number" },
+        "likedBy": { "type": "array", "items": { "type": "string" }, "description": "Array of user UIDs who liked this comment" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["threadId", "content", "authorId", "authorName", "likesCount", "createdAt"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "A direct message conversation between users",
+      "type": "object",
+      "properties": {
+        "participants": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "participantDetails": {
+          "type": "object",
+          "description": "Map of user ID to their displayName and photoURL"
+        },
+        "lastMessage": { "type": "string" },
+        "lastMessageTime": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["participants", "participantDetails", "createdAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A single message in a chat",
+      "type": "object",
+      "properties": {
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chatId", "senderId", "text", "createdAt"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "Community event or party",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string" },
+        "location": { "type": "string" },
+        "position": { 
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Latitude and Longitude"
+        },
+        "organizerId": { "type": "string" },
+        "organizerName": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "category": { "type": "string", "enum": ["party", "workshop", "community", "sports", "other"] },
+        "recurring": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["none", "weekly", "monthly", "yearly"] },
+            "weeklyDays": { "type": "array", "items": { "type": "string" } },
+            "monthlyOption": { "type": "string", "enum": ["date", "dayOfWeek"] },
+            "monthlyDate": { "type": "integer" },
+            "monthlyWeek": { "type": "integer" },
+            "monthlyDay": { "type": "string" },
+            "yearlyMonth": { "type": "integer" },
+            "yearlyDay": { "type": "integer" },
+            "endType": { "type": "string", "enum": ["never", "date", "count"] },
+            "endDate": { "type": "string" },
+            "endCount": { "type": "integer" }
+          },
+          "required": ["type"]
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description", "date", "time", "location", "organizerId", "organizerName", "category", "recurring", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/users_public/{userId}": {
+      "schema": { "$ref": "#/entities/UserPublic" },
+      "description": "Public user profiles"
+    },
+    "/locations/{locationId}": {
+      "schema": { "$ref": "#/entities/Location" },
+      "description": "Map locations"
+    },
+    "/bookingItems/{itemId}": {
+      "schema": { "$ref": "#/entities/BookingItem" },
+      "description": "Available booking services"
+    },
+    "/threads/{threadId}": {
+      "schema": { "$ref": "#/entities/Thread" },
+      "description": "Community forum threads"
+    },
+    "/audioRooms/{roomId}": {
+      "schema": { "$ref": "#/entities/AudioRoom" },
+      "description": "Active audio rooms"
+    },
+    "/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/Comment" },
+      "description": "Comments on forum threads"
+    },
+    "/chats/{chatId}": {
+      "schema": { "$ref": "#/entities/Chat" },
+      "description": "Direct message conversations"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Messages within a conversation"
+    },
+    "/events/{eventId}": {
+      "schema": { "$ref": "#/entities/Event" },
+      "description": "Community events"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "GiliHub",
+  "description": "Progressive Web App (PWA) offline-first untuk turis dan warga lokal di Gili Trawangan, menyediakan peta ringan, booking real-time, dan forum komunitas.",
+  "requestFramePermissions": ["geolocation", "microphone"]
+}

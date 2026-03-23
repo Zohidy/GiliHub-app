@@ -1,0 +1,365 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (request.auth.token.get('email', '') in ["zohidydy@gmail.com", "zohidin384@gmail.com"] && 
+           request.auth.token.get('email_verified', false) == true)
+        );
+    }
+
+    function isProvider() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'provider';
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    
+    function isValidUser() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['uid', 'displayName', 'email', 'photoURL', 'role', 'createdAt', 'bio', 'followersCount', 'followingCount']) &&
+             data.uid == request.auth.uid &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 50 &&
+             data.email is string && isValidEmail(data.email) &&
+             (!('photoURL' in data) || data.photoURL == null || (data.photoURL is string && data.photoURL.size() < 2000)) &&
+             (!('bio' in data) || data.bio == null || (data.bio is string && data.bio.size() <= 500)) &&
+             (!('followersCount' in data) || (data.followersCount is number && data.followersCount >= 0)) &&
+             (!('followingCount' in data) || (data.followingCount is number && data.followingCount >= 0)) &&
+             data.role in ['user', 'admin', 'provider'] &&
+             (!('createdAt' in data) || data.createdAt is string);
+    }
+
+    function isValidUserPublic() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['uid', 'displayName', 'photoURL', 'role', 'createdAt', 'bio', 'followersCount', 'followingCount']) &&
+             data.uid == request.auth.uid &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 50 &&
+             (!('photoURL' in data) || data.photoURL == null || (data.photoURL is string && data.photoURL.size() < 2000)) &&
+             (!('bio' in data) || data.bio == null || (data.bio is string && data.bio.size() <= 500)) &&
+             (!('followersCount' in data) || (data.followersCount is number && data.followersCount >= 0)) &&
+             (!('followingCount' in data) || (data.followingCount is number && data.followingCount >= 0)) &&
+             data.role in ['user', 'admin', 'provider'] &&
+             (!('createdAt' in data) || data.createdAt is string);
+    }
+
+    function isValidLocation() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['name', 'type', 'position', 'desc', 'createdBy']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.type in ["sunset", "clinic", "police", "bike", "snorkeling", "port", "restaurant"] &&
+             data.position is list && data.position.size() == 2 &&
+             data.position[0] is number && data.position[1] is number &&
+             data.desc is string && data.desc.size() < 500 &&
+             data.createdBy is string;
+    }
+
+    function isValidBookingItem() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['type', 'title', 'time', 'price', 'provider', 'providerId', 'icon', 'color']) &&
+             data.type is string && data.type.size() < 50 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             data.time is string && data.time.size() < 50 &&
+             data.price is string && data.price.size() < 50 &&
+             data.provider is string && data.provider.size() < 100 &&
+             data.providerId == request.auth.uid &&
+             (!('icon' in data) || (data.icon is string && data.icon.size() < 50)) &&
+             (!('color' in data) || (data.color is string && data.color.size() < 50));
+    }
+
+    function isValidThread() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['title', 'content', 'category', 'authorId', 'authorName', 'repliesCount', 'likesCount', 'likedBy', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 150 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 2000 &&
+             (!('category' in data) || data.category in ["general", "tips", "food", "transport", "party", "help"]) &&
+             (!('authorId' in data) || data.authorId is string) &&
+             (!('authorName' in data) || (data.authorName is string && data.authorName.size() < 50)) &&
+             (!('repliesCount' in data) || (data.repliesCount is number && data.repliesCount >= 0)) &&
+             (!('likesCount' in data) || (data.likesCount is number && data.likesCount >= 0)) &&
+             (!('likedBy' in data) || data.likedBy is list) &&
+             (!('createdAt' in data) || data.createdAt is string);
+    }
+
+    function isValidAudioRoom() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['title', 'hostId', 'listenersCount', 'speakers', 'active', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             data.hostId == request.auth.uid &&
+             data.listenersCount is number && data.listenersCount >= 0 &&
+             data.speakers is list && data.speakers.size() <= 10 &&
+             data.active is bool &&
+             data.createdAt is string;
+    }
+
+    function isValidComment() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['threadId', 'parentId', 'content', 'authorId', 'authorName', 'repliesCount', 'likesCount', 'likedBy', 'createdAt']) &&
+             data.threadId is string && data.threadId.size() > 0 && data.threadId.size() < 100 &&
+             (!('parentId' in data) || (data.parentId is string && data.parentId.size() < 100)) &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 1000 &&
+             (!('authorId' in data) || data.authorId == request.auth.uid) &&
+             (!('authorName' in data) || (data.authorName is string && data.authorName.size() < 50)) &&
+             (!('repliesCount' in data) || (data.repliesCount is number && data.repliesCount >= 0)) &&
+             (!('likesCount' in data) || (data.likesCount is number && data.likesCount >= 0)) &&
+             (!('likedBy' in data) || data.likedBy is list) &&
+             (!('createdAt' in data) || data.createdAt is string);
+    }
+
+    function isValidChat() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['participants', 'participantDetails', 'lastMessage', 'lastMessageTime', 'createdAt']) &&
+             data.participants is list && data.participants.size() == 2 &&
+             request.auth.uid in data.participants &&
+             data.participantDetails is map &&
+             (!('lastMessage' in data) || (data.lastMessage is string && data.lastMessage.size() < 1000)) &&
+             (!('lastMessageTime' in data) || data.lastMessageTime is string) &&
+             data.createdAt is string;
+    }
+
+    function isValidMessage() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['chatId', 'senderId', 'text', 'createdAt']) &&
+             data.chatId is string && data.chatId.size() > 0 && data.chatId.size() < 100 &&
+             data.senderId == request.auth.uid &&
+             data.text is string && data.text.size() > 0 && data.text.size() < 2000 &&
+             data.createdAt is string;
+    }
+
+    function isValidEvent() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['title', 'description', 'date', 'time', 'location', 'position', 'organizerId', 'organizerName', 'imageUrl', 'category', 'recurring', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             data.description is string && data.description.size() > 0 && data.description.size() < 1000 &&
+             data.date is string &&
+             data.time is string &&
+             data.location is string && data.location.size() < 100 &&
+             data.position is list && data.position.size() == 2 &&
+             data.position[0] is number && data.position[1] is number &&
+             data.organizerId == request.auth.uid &&
+             data.organizerName is string && data.organizerName.size() < 50 &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() < 500)) &&
+             data.category in ["party", "workshop", "community", "sports", "other"] &&
+             data.recurring is map &&
+             data.recurring.type in ["none", "weekly", "monthly", "yearly"] &&
+             data.createdAt is string;
+    }
+
+    function isValidThreadCounterUpdate() {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      let oldLikes = ('likesCount' in resource.data) ? resource.data.likesCount : 0;
+      let newLikes = request.resource.data.likesCount;
+      let oldLikedBy = ('likedBy' in resource.data) ? resource.data.likedBy : [];
+      let newLikedBy = request.resource.data.likedBy;
+      
+      return (affected.hasOnly(['repliesCount']) && request.resource.data.repliesCount == resource.data.repliesCount + 1) ||
+             (affected.hasOnly(['likesCount', 'likedBy']) && 
+              math.abs(newLikes - oldLikes) == 1 &&
+              ((newLikes == oldLikes + 1 && !oldLikedBy.contains(request.auth.uid) && newLikedBy.contains(request.auth.uid)) ||
+               (newLikes == oldLikes - 1 && oldLikedBy.contains(request.auth.uid) && !newLikedBy.contains(request.auth.uid))));
+    }
+
+    function isValidCommentCounterUpdate() {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      let oldLikes = ('likesCount' in resource.data) ? resource.data.likesCount : 0;
+      let newLikes = request.resource.data.likesCount;
+      let oldLikedBy = ('likedBy' in resource.data) ? resource.data.likedBy : [];
+      let newLikedBy = request.resource.data.likedBy;
+      
+      return (affected.hasOnly(['repliesCount']) && request.resource.data.repliesCount == resource.data.repliesCount + 1) ||
+             (affected.hasOnly(['likesCount', 'likedBy']) && 
+              math.abs(newLikes - oldLikes) == 1 &&
+              ((newLikes == oldLikes + 1 && !oldLikedBy.contains(request.auth.uid) && newLikedBy.contains(request.auth.uid)) ||
+               (newLikes == oldLikes - 1 && oldLikedBy.contains(request.auth.uid) && !newLikedBy.contains(request.auth.uid))));
+    }
+
+    function isValidUserCounterUpdate(userId) {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      let oldFollowers = ('followersCount' in resource.data) ? resource.data.followersCount : 0;
+      let newFollowers = request.resource.data.followersCount;
+      let oldFollowing = ('followingCount' in resource.data) ? resource.data.followingCount : 0;
+      let newFollowing = request.resource.data.followingCount;
+
+      return (affected.hasOnly(['followersCount']) && math.abs(newFollowers - oldFollowers) == 1) ||
+             (affected.hasOnly(['followingCount']) && math.abs(newFollowing - oldFollowing) == 1 && isOwner(userId));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // Users can read their own data, admins can read all
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can create their own profile. Only admins can create admin roles.
+      allow create: if isAuthenticated() && isValidUser() && 
+                    ((isOwner(userId) && request.resource.data.role == 'user') || isAdmin());
+                    
+      // Users can update their own profile, but cannot change their role.
+      allow update: if isAuthenticated() && (
+                      (isValidUser() && isOwner(userId) && request.resource.data.role == resource.data.role && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt)) || 
+                      isAdmin() || 
+                      isValidUserCounterUpdate(userId)
+                    );
+    }
+
+    match /users_public/{userId} {
+      // Anyone authenticated can read public profiles
+      allow read: if isAuthenticated();
+      
+      // Users can create their own public profile
+      allow create: if isAuthenticated() && isValidUserPublic() && 
+                    ((isOwner(userId) && request.resource.data.role == 'user') || isAdmin());
+                    
+      // Users can update their own public profile
+      allow update: if isAuthenticated() && (
+                      (isValidUserPublic() && isOwner(userId) && request.resource.data.role == resource.data.role && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt)) || 
+                      isAdmin() || 
+                      isValidUserCounterUpdate(userId)
+                    );
+    }
+
+    match /locations/{locationId} {
+      // Anyone authenticated can read locations
+      allow read: if isAuthenticated();
+      
+      // Only admins can create/update/delete locations
+      allow create: if isAdmin() && isValidLocation() && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAdmin() && isValidLocation() && request.resource.data.createdBy == resource.data.createdBy;
+      allow delete: if isAdmin();
+    }
+
+    match /bookingItems/{itemId} {
+      allow read: if isAuthenticated();
+      
+      // Only providers and admins can create/update booking items
+      allow create: if (isProvider() || isAdmin()) && isValidBookingItem();
+      allow update: if (isProvider() || isAdmin()) && isValidBookingItem() && request.resource.data.providerId == resource.data.providerId;
+      allow delete: if (isProvider() && resource.data.providerId == request.auth.uid) || isAdmin();
+    }
+
+    match /threads/{threadId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAuthenticated() && isValidThread() && 
+                    request.resource.data.authorId == request.auth.uid &&
+                    'authorName' in request.resource.data &&
+                    'category' in request.resource.data &&
+                    'repliesCount' in request.resource.data &&
+                    'likesCount' in request.resource.data &&
+                    'likedBy' in request.resource.data &&
+                    'createdAt' in request.resource.data;
+      allow update: if isAuthenticated() && isValidThread() && 
+                    (!('authorId' in resource.data) || request.resource.data.authorId == resource.data.authorId) && 
+                    (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt) &&
+                    (isOwner(resource.data.authorId) || isAdmin() || isValidThreadCounterUpdate());
+      allow delete: if isOwner(resource.data.authorId) || isAdmin();
+    }
+
+    match /comments/{commentId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAuthenticated() && isValidComment() &&
+                    'authorId' in request.resource.data &&
+                    'authorName' in request.resource.data &&
+                    'repliesCount' in request.resource.data &&
+                    'likesCount' in request.resource.data &&
+                    'likedBy' in request.resource.data &&
+                    'createdAt' in request.resource.data;
+      allow update: if isAuthenticated() && isValidComment() && 
+                    (!('authorId' in resource.data) || request.resource.data.authorId == resource.data.authorId) && 
+                    (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt) &&
+                    request.resource.data.threadId == resource.data.threadId &&
+                    (isOwner(resource.data.authorId) || isAdmin() || isValidCommentCounterUpdate());
+      allow delete: if isOwner(resource.data.authorId) || isAdmin();
+    }
+
+    match /audioRooms/{roomId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAuthenticated() && isValidAudioRoom();
+      allow update: if isAuthenticated() && isValidAudioRoom() && 
+                    request.resource.data.hostId == resource.data.hostId &&
+                    request.resource.data.createdAt == resource.data.createdAt &&
+                    (isOwner(resource.data.hostId) || isAdmin());
+      allow delete: if isOwner(resource.data.hostId) || isAdmin();
+    }
+
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      allow create: if isAuthenticated() && isValidChat();
+      allow update: if isAuthenticated() && isValidChat() && 
+                    request.auth.uid in resource.data.participants &&
+                    request.resource.data.participants == resource.data.participants &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow create: if isAuthenticated() && isValidMessage() && 
+                      request.resource.data.chatId == chatId &&
+                      request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      }
+    }
+
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidEvent();
+      allow update: if isAuthenticated() && isValidEvent() && 
+                    (isOwner(resource.data.organizerId) || isAdmin()) &&
+                    request.resource.data.organizerId == resource.data.organizerId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isOwner(resource.data.organizerId) || isAdmin();
+    }
+
+    match /usernames/{username} {
+      // Anyone can read to check availability
+      allow read: if isAuthenticated();
+      // Can only create if it doesn't exist and the uid matches the creator
+      allow create: if isAuthenticated() && 
+                    !exists(/databases/$(database)/documents/usernames/$(username)) &&
+                    request.resource.data.uid == request.auth.uid &&
+                    hasOnlyAllowedFields(['uid', 'createdAt']);
+      // Can only delete their own username
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      // Usernames cannot be updated, only created or deleted
+      allow update: if false;
+    }
+
+    match /follows/{followId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    request.resource.data.followerId == request.auth.uid &&
+                    request.resource.data.followingId != request.auth.uid &&
+                    hasOnlyAllowedFields(['followerId', 'followingId', 'createdAt']) &&
+                    followId == request.resource.data.followerId + '_' + request.resource.data.followingId;
+      allow delete: if isAuthenticated() && resource.data.followerId == request.auth.uid;
+      allow update: if false;
+    }
+  }
+}

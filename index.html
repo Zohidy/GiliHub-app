@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Crucial Viewport Configuration for Mobile PWA -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- App Theme Color (appears in phone status bar) -->
+    <meta name="theme-color" content="#0284c7" />
+    
+    <!-- App Description -->
+    <meta name="description" content="GiliHub - Offline-First App for Maps, Booking, and Community in Gili Trawangan." />
+    
+    <!-- PWA Manifest Link -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    
+    <!-- Apple Touch Icon for iOS -->
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    
+    <title>GiliHub | Gili Trawangan PWA</title>
+  </head>
+  <body>
+    <!-- Fallback if JavaScript is disabled -->
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Simple Service Worker Registration (optional, usually handled by vite-plugin-pwa) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+              console.log('SW registered: ', registration);
+            })
+            .catch(registrationError => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>
+
