@@ -14,6 +14,7 @@ import { useProfileModal } from '../../contexts/ProfileModalContext';
 import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorHandler';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import ConfirmModal from '../ui/ConfirmModal';
 
 const CATEGORIES = [
   { id: 'all', label: 'All', icon: <Hash size={14} /> },
@@ -67,6 +68,12 @@ export default function ForumList() {
   const [editingComment, setEditingComment] = useState<any | null>(null);
   const [editContent, setEditContent] = useState('');
   const [editTitle, setEditTitle] = useState('');
+  const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, title: string, message: string, onConfirm: () => void}>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
 
   // Audio Room State
   const [joinedRoom, setJoinedRoom] = useState<any | null>(null);
@@ -253,36 +260,48 @@ export default function ForumList() {
     }
   };
 
-  const handleDeleteThread = async (threadId: string) => {
-    if (!window.confirm('Are you sure you want to delete this thread? This will also delete all comments.')) return;
-    
-    try {
-      // Delete comments first
-      const commentsQuery = query(collection(db, 'comments'), where('threadId', '==', threadId));
-      const commentsSnapshot = await getDocs(commentsQuery);
-      const deletePromises = commentsSnapshot.docs.map(commentDoc => deleteDoc(doc(db, 'comments', commentDoc.id)));
-      await Promise.all(deletePromises);
-      
-      // Delete thread
-      await deleteDoc(doc(db, 'threads', threadId));
-      toast.success('Thread deleted successfully');
-      setSelectedThread(null);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `threads/${threadId}`);
-      toast.error('Failed to delete thread');
-    }
+  const handleDeleteThread = (threadId: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Thread',
+      message: 'Are you sure you want to delete this thread? This will also delete all comments.',
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        try {
+          // Delete comments first
+          const commentsQuery = query(collection(db, 'comments'), where('threadId', '==', threadId));
+          const commentsSnapshot = await getDocs(commentsQuery);
+          const deletePromises = commentsSnapshot.docs.map(commentDoc => deleteDoc(doc(db, 'comments', commentDoc.id)));
+          await Promise.all(deletePromises);
+          
+          // Delete thread
+          await deleteDoc(doc(db, 'threads', threadId));
+          toast.success('Thread deleted successfully');
+          setSelectedThread(null);
+        } catch (error) {
+          handleFirestoreError(error, OperationType.DELETE, `threads/${threadId}`);
+          toast.error('Failed to delete thread');
+        }
+      }
+    });
   };
 
-  const handleDeleteComment = async (commentId: string) => {
-    if (!window.confirm('Are you sure you want to delete this comment?')) return;
-    
-    try {
-      await deleteDoc(doc(db, 'comments', commentId));
-      toast.success('Comment deleted successfully');
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `comments/${commentId}`);
-      toast.error('Failed to delete comment');
-    }
+  const handleDeleteComment = (commentId: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Comment',
+      message: 'Are you sure you want to delete this comment?',
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        try {
+          await deleteDoc(doc(db, 'comments', commentId));
+          toast.success('Comment deleted successfully');
+        } catch (error) {
+          handleFirestoreError(error, OperationType.DELETE, `comments/${commentId}`);
+          toast.error('Failed to delete comment');
+        }
+      }
+    });
   };
 
   const handleUpdateThread = async (e: React.FormEvent) => {
@@ -1029,6 +1048,14 @@ export default function ForumList() {
           </div>
         )}
       </AnimatePresence>
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

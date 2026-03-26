@@ -23,6 +23,8 @@ function TodayEvents() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setTodayEvents(docs);
+    }, (error) => {
+      console.error("Error fetching today's events:", error);
     });
 
     return () => unsubscribe();

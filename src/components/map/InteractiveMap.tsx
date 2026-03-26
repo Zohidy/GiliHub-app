@@ -9,6 +9,7 @@ import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorH
 import { Plus, X, MapPin, Navigation, Loader2, Trash2, Database, Search, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import ConfirmModal from '../ui/ConfirmModal';
 
 // Fix untuk masalah default icon Leaflet di React
 // @ts-ignore
@@ -92,7 +93,7 @@ function LocateControl({ onLocationFound }: { onLocationFound: (latlng: L.LatLng
       map.flyTo(e.latlng, 16);
     },
     locationerror() {
-      alert("Location access denied or unavailable.");
+      toast.error("Location access denied or unavailable.");
     }
   });
 
@@ -141,6 +142,7 @@ export default function InteractiveMap() {
     desc: ''
   });
   const [isUpdating, setIsUpdating] = useState(false);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{isOpen: boolean, id: string}>({ isOpen: false, id: '' });
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [activeMarkerId, setActiveMarkerId] = useState<string | null>(null);
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
@@ -261,8 +263,13 @@ export default function InteractiveMap() {
     }
   };
 
-  const handleDeleteLocation = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this location?')) return;
+  const handleDeleteLocation = (id: string) => {
+    setDeleteConfirmModal({ isOpen: true, id });
+  };
+
+  const confirmDelete = async () => {
+    const id = deleteConfirmModal.id;
+    setDeleteConfirmModal({ isOpen: false, id: '' });
     try {
       await deleteDoc(doc(db, 'locations', id));
     } catch (error) {
@@ -607,6 +614,16 @@ export default function InteractiveMap() {
           </form>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirmModal.isOpen}
+        title="Delete Location"
+        message="Are you sure you want to delete this location? This action cannot be undone."
+        confirmText="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirmModal({ isOpen: false, id: '' })}
+      />
     </div>
   );
 }

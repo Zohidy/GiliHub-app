@@ -5,6 +5,7 @@ import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorHandler';
 import { toast } from 'sonner';
+import ConfirmModal from '../ui/ConfirmModal';
 
 // Mapping string icon name to actual Lucide component
 const getIconComponent = (iconName: string) => {
@@ -28,6 +29,7 @@ export default function BookingList() {
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{isOpen: boolean, id: string}>({ isOpen: false, id: '' });
   
   const [isBooking, setIsBooking] = useState<any | null>(null);
   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
@@ -91,8 +93,13 @@ export default function BookingList() {
     return () => unsubscribe();
   }, [user]);
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this service?')) return;
+  const handleDelete = (id: string) => {
+    setDeleteConfirmModal({ isOpen: true, id });
+  };
+
+  const confirmDelete = async () => {
+    const id = deleteConfirmModal.id;
+    setDeleteConfirmModal({ isOpen: false, id: '' });
     try {
       await deleteDoc(doc(db, 'bookingItems', id));
       toast.success('Service deleted successfully');
@@ -674,6 +681,16 @@ export default function BookingList() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirmModal.isOpen}
+        title="Delete Service"
+        message="Are you sure you want to delete this service? This action cannot be undone."
+        confirmText="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirmModal({ isOpen: false, id: '' })}
+      />
     </div>
   );
 }

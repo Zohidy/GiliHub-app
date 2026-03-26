@@ -28,6 +28,8 @@ export default function GiliBot() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const chatRef = useRef<any>(null);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -44,13 +46,17 @@ export default function GiliBot() {
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: [
-          { role: 'user', parts: [{ text: `Context: ${SYSTEM_INSTRUCTION}\n\nUser: ${userMessage}` }] }
-        ],
-      });
+      
+      if (!chatRef.current) {
+        chatRef.current = ai.chats.create({
+          model: "gemini-3-flash-preview",
+          config: {
+            systemInstruction: SYSTEM_INSTRUCTION,
+          }
+        });
+      }
 
+      const response = await chatRef.current.sendMessage({ message: userMessage });
       const botText = response.text || "Sorry, I'm having a bit of island brain fog. Can you try again? 🥥";
       setMessages(prev => [...prev, { role: 'bot', text: botText }]);
     } catch (error) {

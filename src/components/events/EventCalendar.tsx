@@ -10,6 +10,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import { toast } from 'sonner';
+import ConfirmModal from '../ui/ConfirmModal';
 
 // Fix Leaflet icons
 // @ts-ignore
@@ -42,6 +43,7 @@ export default function EventCalendar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{isOpen: boolean, id: string}>({ isOpen: false, id: '' });
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
@@ -263,9 +265,13 @@ export default function EventCalendar() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteEvent = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this event?')) return;
-    
+  const handleDeleteEvent = (id: string) => {
+    setDeleteConfirmModal({ isOpen: true, id });
+  };
+
+  const confirmDelete = async () => {
+    const id = deleteConfirmModal.id;
+    setDeleteConfirmModal({ isOpen: false, id: '' });
     try {
       await deleteDoc(doc(db, 'events', id));
       toast.success('Event deleted');
@@ -981,6 +987,16 @@ export default function EventCalendar() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirmModal.isOpen}
+        title="Delete Event"
+        message="Are you sure you want to delete this event? This action cannot be undone."
+        confirmText="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirmModal({ isOpen: false, id: '' })}
+      />
     </div>
   );
 }

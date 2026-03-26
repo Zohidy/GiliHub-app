@@ -99,7 +99,7 @@ service cloud.firestore {
              data.time is string && data.time.size() > 0 && data.time.size() < 50 &&
              data.price is string && data.price.size() > 0 && data.price.size() < 50 &&
              data.provider is string && data.provider.size() > 0 && data.provider.size() < 100 &&
-             data.providerId == request.auth.uid &&
+             data.providerId is string &&
              (!('icon' in data) || (data.icon is string && data.icon.size() > 0 && data.icon.size() < 50)) &&
              (!('color' in data) || (data.color is string && data.color.size() > 0 && data.color.size() < 50));
     }
@@ -236,7 +236,7 @@ service cloud.firestore {
       return hasOnlyAllowedFields(['serviceId', 'serviceTitle', 'userId', 'userName', 'date', 'time', 'guests', 'status', 'createdAt', 'providerId']) &&
              data.serviceId is string &&
              data.serviceTitle is string &&
-             data.userId == request.auth.uid &&
+             data.userId is string &&
              data.userName is string &&
              data.date is string &&
              (!('time' in data) || data.time is string) &&
@@ -296,8 +296,8 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       
       // Only providers and admins can create/update booking items
-      allow create: if (isProvider() || isAdmin()) && isValidBookingItem();
-      allow update: if (isProvider() || isAdmin()) && isValidBookingItem() && request.resource.data.providerId == resource.data.providerId;
+      allow create: if (isProvider() && isValidBookingItem() && request.resource.data.providerId == request.auth.uid) || (isAdmin() && isValidBookingItem());
+      allow update: if (isProvider() && isValidBookingItem() && request.resource.data.providerId == resource.data.providerId && resource.data.providerId == request.auth.uid) || (isAdmin() && isValidBookingItem());
       allow delete: if (isProvider() && resource.data.providerId == request.auth.uid) || isAdmin();
     }
 
@@ -378,10 +378,10 @@ service cloud.firestore {
 
     match /bookings/{bookingId} {
       allow read: if isAuthenticated() && (isOwner(resource.data.userId) || resource.data.providerId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && isValidBooking();
+      allow create: if isAuthenticated() && isValidBooking() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && (
                       (isOwner(resource.data.userId) && request.resource.data.status == 'cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
-                      (resource.data.providerId == request.auth.uid && isValidBooking()) ||
+                      (resource.data.providerId == request.auth.uid && request.resource.data.status in ['pending', 'confirmed', 'cancelled'] && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
                       isAdmin()
                     );
       allow delete: if isAdmin();
