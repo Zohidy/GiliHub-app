@@ -43,29 +43,41 @@ service cloud.firestore {
     
     function isValidUser() {
       let data = request.resource.data;
-      return hasOnlyAllowedFields(['uid', 'displayName', 'email', 'photoURL', 'role', 'createdAt', 'bio', 'followersCount', 'followingCount']) &&
+      return hasOnlyAllowedFields(['uid', 'displayName', 'email', 'photoURL', 'role', 'createdAt', 'updatedAt', 'bio', 'followersCount', 'followingCount', 'socialLinks', 'interests', 'profileSetupCompleted', 'country', 'gender']) &&
              data.uid == request.auth.uid &&
              data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 50 &&
              data.email is string && isValidEmail(data.email) &&
              (!('photoURL' in data) || data.photoURL == null || (data.photoURL is string && data.photoURL.size() < 2000)) &&
-             (!('bio' in data) || data.bio == null || (data.bio is string && data.bio.size() <= 500)) &&
+             (!('bio' in data) || data.bio == null || (data.bio is string && data.bio.size() <= 1000)) &&
              (!('followersCount' in data) || (data.followersCount is number && data.followersCount >= 0)) &&
              (!('followingCount' in data) || (data.followingCount is number && data.followingCount >= 0)) &&
+             (!('socialLinks' in data) || data.socialLinks is map) &&
+             (!('interests' in data) || (data.interests is list && data.interests.size() <= 50)) &&
+             (!('profileSetupCompleted' in data) || data.profileSetupCompleted is bool) &&
+             (!('country' in data) || data.country is string) &&
+             (!('gender' in data) || data.gender is string) &&
              data.role in ['user', 'admin', 'provider'] &&
-             (!('createdAt' in data) || data.createdAt is string);
+             (!('createdAt' in data) || data.createdAt is string) &&
+             (!('updatedAt' in data) || data.updatedAt is string);
     }
 
     function isValidUserPublic() {
       let data = request.resource.data;
-      return hasOnlyAllowedFields(['uid', 'displayName', 'photoURL', 'role', 'createdAt', 'bio', 'followersCount', 'followingCount']) &&
+      return hasOnlyAllowedFields(['uid', 'displayName', 'photoURL', 'role', 'createdAt', 'updatedAt', 'bio', 'followersCount', 'followingCount', 'socialLinks', 'interests', 'profileSetupCompleted', 'country', 'gender']) &&
              data.uid == request.auth.uid &&
              data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 50 &&
              (!('photoURL' in data) || data.photoURL == null || (data.photoURL is string && data.photoURL.size() < 2000)) &&
-             (!('bio' in data) || data.bio == null || (data.bio is string && data.bio.size() <= 500)) &&
+             (!('bio' in data) || data.bio == null || (data.bio is string && data.bio.size() <= 1000)) &&
              (!('followersCount' in data) || (data.followersCount is number && data.followersCount >= 0)) &&
              (!('followingCount' in data) || (data.followingCount is number && data.followingCount >= 0)) &&
+             (!('socialLinks' in data) || data.socialLinks is map) &&
+             (!('interests' in data) || (data.interests is list && data.interests.size() <= 50)) &&
+             (!('profileSetupCompleted' in data) || data.profileSetupCompleted is bool) &&
+             (!('country' in data) || data.country is string) &&
+             (!('gender' in data) || data.gender is string) &&
              data.role in ['user', 'admin', 'provider'] &&
-             (!('createdAt' in data) || data.createdAt is string);
+             (!('createdAt' in data) || data.createdAt is string) &&
+             (!('updatedAt' in data) || data.updatedAt is string);
     }
 
     function isValidLocation() {
@@ -82,28 +94,31 @@ service cloud.firestore {
     function isValidBookingItem() {
       let data = request.resource.data;
       return hasOnlyAllowedFields(['type', 'title', 'time', 'price', 'provider', 'providerId', 'icon', 'color']) &&
-             data.type is string && data.type.size() < 50 &&
+             data.type is string && data.type.size() > 0 && data.type.size() < 50 &&
              data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
-             data.time is string && data.time.size() < 50 &&
-             data.price is string && data.price.size() < 50 &&
-             data.provider is string && data.provider.size() < 100 &&
+             data.time is string && data.time.size() > 0 && data.time.size() < 50 &&
+             data.price is string && data.price.size() > 0 && data.price.size() < 50 &&
+             data.provider is string && data.provider.size() > 0 && data.provider.size() < 100 &&
              data.providerId == request.auth.uid &&
-             (!('icon' in data) || (data.icon is string && data.icon.size() < 50)) &&
-             (!('color' in data) || (data.color is string && data.color.size() < 50));
+             (!('icon' in data) || (data.icon is string && data.icon.size() > 0 && data.icon.size() < 50)) &&
+             (!('color' in data) || (data.color is string && data.color.size() > 0 && data.color.size() < 50));
     }
 
     function isValidThread() {
       let data = request.resource.data;
-      return hasOnlyAllowedFields(['title', 'content', 'category', 'authorId', 'authorName', 'repliesCount', 'likesCount', 'likedBy', 'createdAt']) &&
-             data.title is string && data.title.size() > 0 && data.title.size() < 150 &&
-             data.content is string && data.content.size() > 0 && data.content.size() < 2000 &&
+      return hasOnlyAllowedFields(['title', 'content', 'category', 'authorId', 'authorName', 'authorAvatar', 'authorRole', 'repliesCount', 'likesCount', 'likedBy', 'createdAt', 'updatedAt']) &&
+             (!('title' in data) || (data.title is string && data.title.size() > 0 && data.title.size() <= 200)) &&
+             (!('content' in data) || (data.content is string && data.content.size() > 0 && data.content.size() <= 5000)) &&
              (!('category' in data) || data.category in ["general", "tips", "food", "transport", "party", "help"]) &&
              (!('authorId' in data) || data.authorId is string) &&
-             (!('authorName' in data) || (data.authorName is string && data.authorName.size() < 50)) &&
+             (!('authorName' in data) || (data.authorName is string && data.authorName.size() <= 100)) &&
+             (!('authorAvatar' in data) || data.authorAvatar == null || (data.authorAvatar is string && data.authorAvatar.size() < 2000)) &&
+             (!('authorRole' in data) || data.authorRole == null || data.authorRole is string) &&
              (!('repliesCount' in data) || (data.repliesCount is number && data.repliesCount >= 0)) &&
              (!('likesCount' in data) || (data.likesCount is number && data.likesCount >= 0)) &&
              (!('likedBy' in data) || data.likedBy is list) &&
-             (!('createdAt' in data) || data.createdAt is string);
+             (!('createdAt' in data) || data.createdAt is string) &&
+             (!('updatedAt' in data) || data.updatedAt is string);
     }
 
     function isValidAudioRoom() {
@@ -119,12 +134,14 @@ service cloud.firestore {
 
     function isValidComment() {
       let data = request.resource.data;
-      return hasOnlyAllowedFields(['threadId', 'parentId', 'content', 'authorId', 'authorName', 'repliesCount', 'likesCount', 'likedBy', 'createdAt']) &&
+      return hasOnlyAllowedFields(['threadId', 'parentId', 'content', 'authorId', 'authorName', 'authorAvatar', 'authorRole', 'repliesCount', 'likesCount', 'likedBy', 'createdAt']) &&
              data.threadId is string && data.threadId.size() > 0 && data.threadId.size() < 100 &&
              (!('parentId' in data) || (data.parentId is string && data.parentId.size() < 100)) &&
              data.content is string && data.content.size() > 0 && data.content.size() < 1000 &&
-             (!('authorId' in data) || data.authorId == request.auth.uid) &&
+             (!('authorId' in data) || data.authorId is string) &&
              (!('authorName' in data) || (data.authorName is string && data.authorName.size() < 50)) &&
+             (!('authorAvatar' in data) || data.authorAvatar == null || (data.authorAvatar is string && data.authorAvatar.size() < 2000)) &&
+             (!('authorRole' in data) || data.authorRole is string) &&
              (!('repliesCount' in data) || (data.repliesCount is number && data.repliesCount >= 0)) &&
              (!('likesCount' in data) || (data.likesCount is number && data.likesCount >= 0)) &&
              (!('likedBy' in data) || data.likedBy is list) &&
@@ -133,12 +150,13 @@ service cloud.firestore {
 
     function isValidChat() {
       let data = request.resource.data;
-      return hasOnlyAllowedFields(['participants', 'participantDetails', 'lastMessage', 'lastMessageTime', 'createdAt']) &&
+      return hasOnlyAllowedFields(['participants', 'participantDetails', 'lastMessage', 'lastMessageTime', 'createdAt', 'unreadBy']) &&
              data.participants is list && data.participants.size() == 2 &&
              request.auth.uid in data.participants &&
              data.participantDetails is map &&
              (!('lastMessage' in data) || (data.lastMessage is string && data.lastMessage.size() < 1000)) &&
              (!('lastMessageTime' in data) || data.lastMessageTime is string) &&
+             (!('unreadBy' in data) || data.unreadBy is list) &&
              data.createdAt is string;
     }
 
@@ -172,12 +190,14 @@ service cloud.firestore {
 
     function isValidThreadCounterUpdate() {
       let affected = request.resource.data.diff(resource.data).affectedKeys();
-      let oldLikes = ('likesCount' in resource.data) ? resource.data.likesCount : 0;
-      let newLikes = request.resource.data.likesCount;
-      let oldLikedBy = ('likedBy' in resource.data) ? resource.data.likedBy : [];
-      let newLikedBy = request.resource.data.likedBy;
+      let oldLikes = resource.data.get('likesCount', 0);
+      let newLikes = request.resource.data.get('likesCount', 0);
+      let oldLikedBy = resource.data.get('likedBy', []);
+      let newLikedBy = request.resource.data.get('likedBy', []);
+      let oldReplies = resource.data.get('repliesCount', 0);
+      let newReplies = request.resource.data.get('repliesCount', 0);
       
-      return (affected.hasOnly(['repliesCount']) && request.resource.data.repliesCount == resource.data.repliesCount + 1) ||
+      return (affected.hasOnly(['repliesCount']) && newReplies == oldReplies + 1) ||
              (affected.hasOnly(['likesCount', 'likedBy']) && 
               math.abs(newLikes - oldLikes) == 1 &&
               ((newLikes == oldLikes + 1 && !oldLikedBy.contains(request.auth.uid) && newLikedBy.contains(request.auth.uid)) ||
@@ -186,12 +206,14 @@ service cloud.firestore {
 
     function isValidCommentCounterUpdate() {
       let affected = request.resource.data.diff(resource.data).affectedKeys();
-      let oldLikes = ('likesCount' in resource.data) ? resource.data.likesCount : 0;
-      let newLikes = request.resource.data.likesCount;
-      let oldLikedBy = ('likedBy' in resource.data) ? resource.data.likedBy : [];
-      let newLikedBy = request.resource.data.likedBy;
+      let oldLikes = resource.data.get('likesCount', 0);
+      let newLikes = request.resource.data.get('likesCount', 0);
+      let oldLikedBy = resource.data.get('likedBy', []);
+      let newLikedBy = request.resource.data.get('likedBy', []);
+      let oldReplies = resource.data.get('repliesCount', 0);
+      let newReplies = request.resource.data.get('repliesCount', 0);
       
-      return (affected.hasOnly(['repliesCount']) && request.resource.data.repliesCount == resource.data.repliesCount + 1) ||
+      return (affected.hasOnly(['repliesCount']) && newReplies == oldReplies + 1) ||
              (affected.hasOnly(['likesCount', 'likedBy']) && 
               math.abs(newLikes - oldLikes) == 1 &&
               ((newLikes == oldLikes + 1 && !oldLikedBy.contains(request.auth.uid) && newLikedBy.contains(request.auth.uid)) ||
@@ -200,13 +222,28 @@ service cloud.firestore {
 
     function isValidUserCounterUpdate(userId) {
       let affected = request.resource.data.diff(resource.data).affectedKeys();
-      let oldFollowers = ('followersCount' in resource.data) ? resource.data.followersCount : 0;
-      let newFollowers = request.resource.data.followersCount;
-      let oldFollowing = ('followingCount' in resource.data) ? resource.data.followingCount : 0;
-      let newFollowing = request.resource.data.followingCount;
+      let oldFollowers = resource.data.get('followersCount', 0);
+      let newFollowers = request.resource.data.get('followersCount', 0);
+      let oldFollowing = resource.data.get('followingCount', 0);
+      let newFollowing = request.resource.data.get('followingCount', 0);
 
       return (affected.hasOnly(['followersCount']) && math.abs(newFollowers - oldFollowers) == 1) ||
              (affected.hasOnly(['followingCount']) && math.abs(newFollowing - oldFollowing) == 1 && isOwner(userId));
+    }
+
+    function isValidBooking() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['serviceId', 'serviceTitle', 'userId', 'userName', 'date', 'time', 'guests', 'status', 'createdAt', 'providerId']) &&
+             data.serviceId is string &&
+             data.serviceTitle is string &&
+             data.userId == request.auth.uid &&
+             data.userName is string &&
+             data.date is string &&
+             (!('time' in data) || data.time is string) &&
+             (!('guests' in data) || data.guests is number) &&
+             data.status in ['pending', 'confirmed', 'cancelled'] &&
+             data.createdAt is string &&
+             data.providerId is string;
     }
 
     // ===============================================================
@@ -269,6 +306,8 @@ service cloud.firestore {
       
       allow create: if isAuthenticated() && isValidThread() && 
                     request.resource.data.authorId == request.auth.uid &&
+                    'title' in request.resource.data &&
+                    'content' in request.resource.data &&
                     'authorName' in request.resource.data &&
                     'category' in request.resource.data &&
                     'repliesCount' in request.resource.data &&
@@ -286,7 +325,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       
       allow create: if isAuthenticated() && isValidComment() &&
-                    'authorId' in request.resource.data &&
+                    request.resource.data.authorId == request.auth.uid &&
                     'authorName' in request.resource.data &&
                     'repliesCount' in request.resource.data &&
                     'likesCount' in request.resource.data &&
@@ -335,6 +374,17 @@ service cloud.firestore {
                     request.resource.data.organizerId == resource.data.organizerId &&
                     request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if isOwner(resource.data.organizerId) || isAdmin();
+    }
+
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || resource.data.providerId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidBooking();
+      allow update: if isAuthenticated() && (
+                      (isOwner(resource.data.userId) && request.resource.data.status == 'cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
+                      (resource.data.providerId == request.auth.uid && isValidBooking()) ||
+                      isAdmin()
+                    );
+      allow delete: if isAdmin();
     }
 
     match /usernames/{username} {

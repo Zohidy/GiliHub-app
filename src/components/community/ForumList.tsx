@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { 
   Mic, MessageSquare, Users, Radio, Clock, User, Plus, X, 
   ArrowLeft, Send, Filter, ThumbsUp, ChevronRight, Hash,
-  Search, MoreVertical, Share2, MessageCircle, BadgeCheck
+  Search, MoreVertical, Share2, MessageCircle, BadgeCheck, Loader2, Edit2, Trash2
 } from 'lucide-react';
 import { 
   collection, onSnapshot, addDoc, query, orderBy, doc, 
-  updateDoc, increment, where, arrayUnion, arrayRemove 
+  updateDoc, increment, where, arrayUnion, arrayRemove, deleteDoc, getDocs 
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProfileModal } from '../../contexts/ProfileModalContext';
 import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorHandler';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 
 const CATEGORIES = [
   { id: 'all', label: 'All', icon: <Hash size={14} /> },
@@ -21,6 +22,9 @@ const CATEGORIES = [
   { id: 'food', label: 'Food', icon: <Hash size={14} /> },
   { id: 'transport', label: 'Transport', icon: <Hash size={14} /> },
   { id: 'party', label: 'Party', icon: <Hash size={14} /> },
+  { id: 'diving', label: 'Diving', icon: <Hash size={14} /> },
+  { id: 'snorkeling', label: 'Snorkeling', icon: <Hash size={14} /> },
+  { id: 'accommodation', label: 'Stay', icon: <Hash size={14} /> },
   { id: 'help', label: 'Help', icon: <Hash size={14} /> },
 ];
 
@@ -30,6 +34,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   food: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800',
   transport: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800',
   party: 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800',
+  diving: 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-800',
+  snorkeling: 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-800',
+  accommodation: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
   help: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800',
 };
 
@@ -37,7 +44,9 @@ export default function ForumList() {
   const { user, userData } = useAuth();
   const { openProfile } = useProfileModal();
   const [threads, setThreads] = useState<any[]>([]);
+  const [isLoadingThreads, setIsLoadingThreads] = useState(true);
   const [audioRooms, setAudioRooms] = useState<any[]>([]);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(true);
   const [isCreatingThread, setIsCreatingThread] = useState(false);
   const [newThreadTitle, setNewThreadTitle] = useState('');
   const [newThreadContent, setNewThreadContent] = useState('');
@@ -50,6 +59,7 @@ export default function ForumList() {
   // Thread Detail State
   const [selectedThread, setSelectedThread] = useState<any | null>(null);
   const [comments, setComments] = useState<any[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [replyingTo, setReplyingTo] = useState<any | null>(null);
@@ -69,6 +79,7 @@ export default function ForumList() {
         ...doc.data()
       }));
       setThreads(threadsData);
+      setIsLoadingThreads(false);
       
       if (selectedThread) {
         const updatedThread = threadsData.find(t => t.id === selectedThread.id);
@@ -76,6 +87,7 @@ export default function ForumList() {
       }
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'threads');
+      setIsLoadingThreads(false);
     });
 
     const roomsQuery = query(collection(db, 'audioRooms'), orderBy('createdAt', 'desc'));
@@ -85,8 +97,10 @@ export default function ForumList() {
         ...doc.data()
       }));
       setAudioRooms(roomsData);
+      setIsLoadingRooms(false);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'audioRooms');
+      setIsLoadingRooms(false);
     });
 
     return () => {
@@ -98,6 +112,7 @@ export default function ForumList() {
   useEffect(() => {
     if (!selectedThread) return;
 
+    setIsLoadingComments(true);
     const commentsQuery = query(
       collection(db, 'comments'), 
       where('threadId', '==', selectedThread.id)
@@ -110,8 +125,10 @@ export default function ForumList() {
       }));
       commentsData.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       setComments(commentsData);
+      setIsLoadingComments(false);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'comments');
+      setIsLoadingComments(false);
     });
 
     return () => unsubscribeComments();
@@ -129,6 +146,7 @@ export default function ForumList() {
         category: newThreadCategory,
         authorId: user.uid,
         authorName: user.displayName || 'Anonymous',
+        authorAvatar: userData?.photoURL || user.photoURL || null,
         authorRole: userData?.role || 'user',
         repliesCount: 0,
         likesCount: 0,
@@ -139,8 +157,10 @@ export default function ForumList() {
       setNewThreadTitle('');
       setNewThreadContent('');
       setNewThreadCategory('general');
+      toast.success('Discussion created successfully');
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'threads');
+      toast.error('Failed to create discussion');
     } finally {
       setIsSubmitting(false);
     }
@@ -196,6 +216,7 @@ export default function ForumList() {
         content: newComment,
         authorId: user.uid,
         authorName: user.displayName || 'Anonymous',
+        authorAvatar: userData?.photoURL || user.photoURL || null,
         authorRole: userData?.role || 'user',
         createdAt: new Date().toISOString(),
         repliesCount: 0,
@@ -223,10 +244,44 @@ export default function ForumList() {
       
       setNewComment('');
       setReplyingTo(null);
+      toast.success('Comment posted');
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'comments');
+      toast.error('Failed to post comment');
     } finally {
       setIsSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteThread = async (threadId: string) => {
+    if (!window.confirm('Are you sure you want to delete this thread? This will also delete all comments.')) return;
+    
+    try {
+      // Delete comments first
+      const commentsQuery = query(collection(db, 'comments'), where('threadId', '==', threadId));
+      const commentsSnapshot = await getDocs(commentsQuery);
+      const deletePromises = commentsSnapshot.docs.map(commentDoc => deleteDoc(doc(db, 'comments', commentDoc.id)));
+      await Promise.all(deletePromises);
+      
+      // Delete thread
+      await deleteDoc(doc(db, 'threads', threadId));
+      toast.success('Thread deleted successfully');
+      setSelectedThread(null);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `threads/${threadId}`);
+      toast.error('Failed to delete thread');
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!window.confirm('Are you sure you want to delete this comment?')) return;
+    
+    try {
+      await deleteDoc(doc(db, 'comments', commentId));
+      toast.success('Comment deleted successfully');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `comments/${commentId}`);
+      toast.error('Failed to delete comment');
     }
   };
 
@@ -242,8 +297,10 @@ export default function ForumList() {
         content: editContent
       });
       setEditingThread(null);
+      toast.success('Discussion updated');
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `threads/${editingThread.id}`);
+      toast.error('Failed to update discussion');
     } finally {
       setIsSubmitting(false);
     }
@@ -260,8 +317,10 @@ export default function ForumList() {
         content: editContent
       });
       setEditingComment(null);
+      toast.success('Comment updated');
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `comments/${editingComment.id}`);
+      toast.error('Failed to update comment');
     } finally {
       setIsSubmittingComment(false);
     }
@@ -290,9 +349,18 @@ export default function ForumList() {
   const renderComments = (parentId: string | null = null, depth = 0) => {
     const filteredComments = comments.filter(c => (parentId === null ? !c.parentId : c.parentId === parentId));
     
+    if (isLoadingComments && parentId === null) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="animate-spin text-sky-600 mb-2" size={32} />
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Loading comments...</p>
+        </div>
+      );
+    }
+
     if (filteredComments.length === 0 && parentId === null) {
       return (
-        <div className="text-center py-12 text-slate-400 text-sm bg-white rounded-2xl border border-dashed border-slate-200">
+        <div className="text-center py-12 text-slate-400 text-sm bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
           <MessageCircle size={32} className="mx-auto mb-2 opacity-20" />
           No comments yet. Be the first to reply!
         </div>
@@ -312,9 +380,13 @@ export default function ForumList() {
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => openProfile(comment.authorId)}
-                  className="w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400 font-bold hover:ring-2 hover:ring-sky-500 transition-all"
+                  className="w-8 h-8 rounded-full bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400 font-bold hover:ring-2 hover:ring-sky-500 transition-all overflow-hidden"
                 >
-                  {comment.authorName?.charAt(0) || 'A'}
+                  {comment.authorAvatar ? (
+                    <img src={comment.authorAvatar} alt={comment.authorName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    comment.authorName?.charAt(0) || 'A'
+                  )}
                 </button>
                 <button 
                   onClick={() => openProfile(comment.authorId)}
@@ -328,17 +400,27 @@ export default function ForumList() {
                 <span className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full"></span>
                 <span>{formatTime(comment.createdAt)}</span>
               </div>
-              {user?.uid === comment.authorId && (
-                <button 
-                  onClick={() => {
-                    setEditingComment(comment);
-                    setEditContent(comment.content);
-                  }}
-                  className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-bold"
-                >
-                  Edit
-                </button>
-              )}
+              <div className="flex gap-3 items-center">
+                {user?.uid === comment.authorId && (
+                  <button 
+                    onClick={() => {
+                      setEditingComment(comment);
+                      setEditContent(comment.content);
+                    }}
+                    className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-bold"
+                  >
+                    Edit
+                  </button>
+                )}
+                {userData?.role === 'admin' && (
+                  <button 
+                    onClick={() => handleDeleteComment(comment.id)}
+                    className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-bold"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
             </div>
             {editingComment?.id === comment.id ? (
               <form onSubmit={handleUpdateComment} className="mb-3">
@@ -444,12 +526,14 @@ export default function ForumList() {
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
+                  maxLength={200}
                   className="w-full font-bold text-xl text-slate-900 dark:text-white mb-4 border-b-2 border-sky-500 focus:outline-none py-2 bg-transparent"
                   autoFocus
                 />
                 <textarea 
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
+                  maxLength={5000}
                   className="w-full text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap border border-slate-200 dark:border-slate-700 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[200px] mb-4 bg-slate-50 dark:bg-slate-800"
                 />
                 <div className="flex gap-2">
@@ -471,41 +555,35 @@ export default function ForumList() {
               </form>
             ) : (
               <>
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="font-bold text-2xl text-slate-900 dark:text-white leading-tight tracking-tight">{selectedThread.title}</h3>
-                  {user?.uid === selectedThread.authorId && (
-                    <button 
-                      onClick={() => {
-                        setEditingThread(selectedThread);
-                        setEditTitle(selectedThread.title);
-                        setEditContent(selectedThread.content);
-                      }}
-                      className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 p-2 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-full transition-colors"
-                    >
-                      <MoreVertical size={18} />
-                    </button>
-                  )}
-                </div>
-                
                 <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mb-6 pb-6 border-b border-slate-50 dark:border-slate-800">
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={() => openProfile(selectedThread.authorId)}
-                      className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm hover:ring-2 hover:ring-sky-500 hover:ring-offset-2 dark:hover:ring-offset-slate-900 transition-all"
+                      className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm hover:ring-2 hover:ring-sky-500 hover:ring-offset-2 dark:hover:ring-offset-slate-900 transition-all overflow-hidden"
                     >
-                      {selectedThread.authorName?.charAt(0) || 'A'}
+                      {selectedThread.authorAvatar ? (
+                        <img src={selectedThread.authorAvatar} alt={selectedThread.authorName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        selectedThread.authorName?.charAt(0) || 'A'
+                      )}
                     </button>
                     <div>
                       <button 
                         onClick={() => openProfile(selectedThread.authorId)}
-                        className="font-bold text-slate-900 dark:text-white hover:underline text-left flex items-center gap-1"
+                        className="font-bold text-slate-900 dark:text-white hover:underline text-left flex items-center gap-1 text-sm"
                       >
                         {selectedThread.authorName}
                         {selectedThread.authorRole === 'admin' && (
                           <BadgeCheck className="text-blue-500" size={16} fill="currentColor" stroke="white" />
                         )}
                       </button>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500">{formatTime(selectedThread.createdAt)}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">
+                          {selectedThread.authorRole}
+                        </span>
+                        <span className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full"></span>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500">{formatTime(selectedThread.createdAt)}</p>
+                      </div>
                     </div>
                   </div>
                   <div className="ml-auto">
@@ -513,6 +591,36 @@ export default function ForumList() {
                       {selectedThread.category}
                     </span>
                   </div>
+                </div>
+
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="font-bold text-2xl text-slate-900 dark:text-white leading-tight tracking-tight">{selectedThread.title}</h3>
+                  {(user?.uid === selectedThread.authorId || userData?.role === 'admin') && (
+                    <div className="flex gap-2">
+                      {user?.uid === selectedThread.authorId && (
+                        <button 
+                          onClick={() => {
+                            setEditingThread(selectedThread);
+                            setEditTitle(selectedThread.title);
+                            setEditContent(selectedThread.content);
+                          }}
+                          className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 p-2 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-full transition-colors"
+                          title="Edit Thread"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                      )}
+                      {userData?.role === 'admin' && (
+                        <button 
+                          onClick={() => handleDeleteThread(selectedThread.id)}
+                          className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 p-2 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-full transition-colors"
+                          title="Delete Thread"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
                 <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap text-base">{selectedThread.content}</p>
@@ -683,7 +791,12 @@ export default function ForumList() {
           <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Live Audio Rooms</h3>
         </div>
         
-        {audioRooms.length === 0 ? (
+        {isLoadingRooms ? (
+          <div className="flex flex-col items-center justify-center py-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+            <Loader2 className="animate-spin text-sky-600 mb-2" size={24} />
+            <p className="text-slate-500 dark:text-slate-400 text-xs">Loading rooms...</p>
+          </div>
+        ) : audioRooms.length === 0 ? (
           <div className="text-center py-8 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 text-sm font-medium">
             No active audio rooms yet.
           </div>
@@ -747,7 +860,12 @@ export default function ForumList() {
           </div>
         </div>
         
-        {sortedThreads.length === 0 ? (
+        {isLoadingThreads ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="animate-spin text-sky-600 mb-4" size={40} />
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Loading discussions...</p>
+          </div>
+        ) : sortedThreads.length === 0 ? (
           <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500">
             <MessageSquare size={40} className="mx-auto mb-3 opacity-20" />
             <p className="font-medium">No discussions found.</p>
@@ -883,7 +1001,7 @@ export default function ForumList() {
                     placeholder="What's on your mind?"
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all font-medium text-slate-800 dark:text-slate-200"
                     required
-                    maxLength={100}
+                    maxLength={200}
                   />
                 </div>
                 
@@ -895,7 +1013,7 @@ export default function ForumList() {
                     placeholder="Tell us more details..."
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-5 py-4 h-40 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all font-medium text-slate-800 dark:text-slate-200"
                     required
-                    maxLength={2000}
+                    maxLength={5000}
                   ></textarea>
                 </div>
                 

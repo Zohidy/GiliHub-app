@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, addDoc, deleteDoc, doc, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, deleteDoc, doc, orderBy, updateDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorHandler';
-import { Calendar as CalendarIcon, Plus, X, Clock, MapPin, User, Tag, Trash2, Image as ImageIcon, Map as MapIcon, List, Share2, RefreshCw } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, X, Clock, MapPin, User, Tag, Trash2, Image as ImageIcon, Map as MapIcon, List, Share2, RefreshCw, Edit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+import { toast } from 'sonner';
 
 // Fix Leaflet icons
 // @ts-ignore
@@ -40,7 +42,10 @@ export default function EventCalendar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+
+  const [editingEvent, setEditingEvent] = useState<any | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -87,9 +92,89 @@ export default function EventCalendar() {
         id: doc.id,
         ...doc.data()
       }));
-      setEvents(eventsData);
+      
+      // Add weekly recurring nightlife events if they don't exist in the data
+      const nightlifeEvents = [
+        {
+          id: 'nightlife-mon',
+          title: 'Monday Night Party @ Blue Marlin',
+          description: 'The legendary Monday night party at Blue Marlin Dive Center. Live music and great vibes.',
+          date: new Date().toISOString().split('T')[0],
+          time: '21:00 - Late',
+          location: 'Blue Marlin Dive Center',
+          category: 'party',
+          recurring: { type: 'weekly', weeklyDays: ['Monday'], endType: 'never' },
+          organizerName: 'System',
+          isSystem: true
+        },
+        {
+          id: 'nightlife-tue',
+          title: 'Gili Bar Crawl',
+          description: 'Join the famous Gili Bar Crawl starting from Blue Marlin. Meet new people and explore the best bars.',
+          date: new Date().toISOString().split('T')[0],
+          time: '19:00 - Late',
+          location: 'Blue Marlin',
+          category: 'party',
+          recurring: { type: 'weekly', weeklyDays: ['Tuesday'], endType: 'never' },
+          organizerName: 'System',
+          isSystem: true
+        },
+        {
+          id: 'nightlife-wed',
+          title: 'Irish Bar & Boat Party',
+          description: 'Wednesday nights are for the Irish Bar and the Gili Boat Party. Don\'t miss out!',
+          date: new Date().toISOString().split('T')[0],
+          time: '20:00 - Late',
+          location: 'Tir Na Nog (Irish Bar)',
+          category: 'party',
+          recurring: { type: 'weekly', weeklyDays: ['Wednesday'], endType: 'never' },
+          organizerName: 'System',
+          isSystem: true
+        },
+        {
+          id: 'nightlife-fri',
+          title: 'Jungle Club Friday',
+          description: 'Start with live music at Summer Summer, then head to Jungle Club for the ultimate Friday night.',
+          date: new Date().toISOString().split('T')[0],
+          time: '22:00 - Late',
+          location: 'Jungle Club',
+          category: 'party',
+          recurring: { type: 'weekly', weeklyDays: ['Friday'], endType: 'never' },
+          organizerName: 'System',
+          isSystem: true
+        },
+        {
+          id: 'nightlife-sat',
+          title: 'Sama Sama Reggae Night',
+          description: 'The best reggae vibes on the island every Saturday night.',
+          date: new Date().toISOString().split('T')[0],
+          time: '21:00 - Late',
+          location: 'Sama Sama Reggae Bar',
+          category: 'party',
+          recurring: { type: 'weekly', weeklyDays: ['Saturday'], endType: 'never' },
+          organizerName: 'System',
+          isSystem: true
+        },
+        {
+          id: 'diving-sun',
+          title: 'Sunday Morning Fun Dive',
+          description: 'Join us for a morning fun dive at Shark Point. All levels welcome!',
+          date: new Date().toISOString().split('T')[0],
+          time: '08:30 - 11:00',
+          location: 'Manta Dive Center',
+          category: 'diving',
+          recurring: { type: 'weekly', weeklyDays: ['Sunday'], endType: 'never' },
+          organizerName: 'System',
+          isSystem: true
+        }
+      ];
+
+      setEvents([...nightlifeEvents, ...eventsData]);
+      setIsLoading(false);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'events');
+      setIsLoading(false);
+      toast.error('Failed to load events');
     });
 
     return () => unsubscribe();
@@ -101,14 +186,24 @@ export default function EventCalendar() {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'events'), {
-        ...formData,
-        organizerId: user.uid,
-        organizerName: userData.displayName,
-        createdAt: new Date().toISOString()
-      });
+      if (editingEvent) {
+        await updateDoc(doc(db, 'events', editingEvent.id), {
+          ...formData,
+          updatedAt: new Date().toISOString()
+        });
+        toast.success('Event updated successfully');
+      } else {
+        await addDoc(collection(db, 'events'), {
+          ...formData,
+          organizerId: user.uid,
+          organizerName: userData.displayName,
+          createdAt: new Date().toISOString()
+        });
+        toast.success('Event published successfully');
+      }
       
       setIsModalOpen(false);
+      setEditingEvent(null);
       setFormData({
         title: '',
         description: '',
@@ -133,10 +228,39 @@ export default function EventCalendar() {
         imageUrl: ''
       });
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'events');
+      handleFirestoreError(error, editingEvent ? OperationType.UPDATE : OperationType.CREATE, 'events');
+      toast.error(editingEvent ? 'Failed to update event' : 'Failed to publish event');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEditEvent = (event: any) => {
+    setEditingEvent(event);
+    setFormData({
+      title: event.title,
+      description: event.description,
+      date: event.date,
+      time: event.time,
+      location: event.location,
+      position: event.position || GILI_T_CENTER,
+      category: event.category,
+      recurring: event.recurring || {
+        type: 'none',
+        weeklyDays: [],
+        monthlyOption: 'date',
+        monthlyDate: 1,
+        monthlyWeek: 1,
+        monthlyDay: 'Monday',
+        yearlyMonth: 1,
+        yearlyDay: 1,
+        endType: 'never',
+        endDate: '',
+        endCount: 1
+      },
+      imageUrl: event.imageUrl || ''
+    });
+    setIsModalOpen(true);
   };
 
   const handleDeleteEvent = async (id: string) => {
@@ -144,8 +268,10 @@ export default function EventCalendar() {
     
     try {
       await deleteDoc(doc(db, 'events', id));
+      toast.success('Event deleted');
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `events/${id}`);
+      toast.error('Failed to delete event');
     }
   };
 
@@ -161,7 +287,7 @@ export default function EventCalendar() {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
-        alert('Event details copied to clipboard!');
+        toast.success('Event details copied to clipboard!');
       }
     } catch (error) {
       // Ignore abort errors
@@ -187,6 +313,9 @@ export default function EventCalendar() {
     { id: 'workshop', label: 'Workshop', color: 'bg-amber-100 text-amber-600' },
     { id: 'community', label: 'Community', color: 'bg-emerald-100 text-emerald-600' },
     { id: 'sports', label: 'Sports', color: 'bg-blue-100 text-blue-600' },
+    { id: 'diving', label: 'Diving', color: 'bg-sky-100 text-sky-600' },
+    { id: 'snorkeling', label: 'Snorkeling', color: 'bg-cyan-100 text-cyan-600' },
+    { id: 'stay', label: 'Stay', color: 'bg-indigo-100 text-indigo-600' },
     { id: 'other', label: 'Other', color: 'bg-slate-100 text-slate-600' }
   ];
 
@@ -236,7 +365,17 @@ export default function EventCalendar() {
 
       {/* Content */}
       <div className="flex-1 relative overflow-hidden">
-        <AnimatePresence mode="wait">
+        {isLoading ? (
+          <div className="h-full w-full flex flex-col items-center justify-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full mb-4"
+            />
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Loading events...</p>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
           {viewMode === 'list' ? (
             <motion.div 
               key="list"
@@ -353,12 +492,22 @@ export default function EventCalendar() {
                             </button>
                             
                             {(user?.uid === event.organizerId || userData?.role === 'admin') && (
-                              <button 
-                                onClick={() => handleDeleteEvent(event.id)}
-                                className="p-2 text-rose-400 dark:text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-full transition-colors"
-                              >
-                                <Trash2 size={16} />
-                              </button>
+                              <>
+                                <button 
+                                  onClick={() => handleEditEvent(event)}
+                                  className="p-2 text-amber-400 dark:text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-full transition-colors"
+                                  title="Edit Event"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                  className="p-2 text-rose-400 dark:text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-full transition-colors"
+                                  title="Delete Event"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </>
                             )}
                           </div>
                         </div>
@@ -411,9 +560,10 @@ export default function EventCalendar() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      )}
+    </div>
 
-      {/* Add Event Modal */}
+    {/* Add Event Modal */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-sm z-[2000] flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -425,9 +575,35 @@ export default function EventCalendar() {
               className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto shadow-2xl"
             >
               <div className="sticky top-0 bg-white dark:bg-slate-900 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center z-10">
-                <h3 className="font-bold text-lg text-slate-800 dark:text-white">Create New Event</h3>
+                <h3 className="font-bold text-lg text-slate-800 dark:text-white">{editingEvent ? 'Edit Event' : 'Create New Event'}</h3>
                 <button 
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setEditingEvent(null);
+                    setFormData({
+                      title: '',
+                      description: '',
+                      date: '',
+                      time: '',
+                      location: '',
+                      position: GILI_T_CENTER,
+                      category: 'community',
+                      recurring: {
+                        type: 'none',
+                        weeklyDays: [],
+                        monthlyOption: 'date',
+                        monthlyDate: 1,
+                        monthlyWeek: 1,
+                        monthlyDay: 'Monday',
+                        yearlyMonth: 1,
+                        yearlyDay: 1,
+                        endType: 'never',
+                        endDate: '',
+                        endCount: 1
+                      },
+                      imageUrl: ''
+                    });
+                  }}
                   className="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
                 >
                   <X size={20} />
@@ -527,6 +703,9 @@ export default function EventCalendar() {
                       <option value="workshop">Workshop</option>
                       <option value="community">Community</option>
                       <option value="sports">Sports</option>
+                      <option value="diving">Diving</option>
+                      <option value="snorkeling">Snorkeling</option>
+                      <option value="stay">Stay</option>
                       <option value="other">Other</option>
                     </select>
                   </div>
@@ -791,7 +970,11 @@ export default function EventCalendar() {
                   disabled={isSubmitting}
                   className="w-full bg-sky-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-sky-200 dark:shadow-none hover:bg-sky-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] mt-4"
                 >
-                  {isSubmitting ? 'Creating Event...' : 'Publish Event'}
+                  {isSubmitting ? (
+                    editingEvent ? 'Updating Event...' : 'Creating Event...'
+                  ) : (
+                    editingEvent ? 'Update Event' : 'Publish Event'
+                  )}
                 </button>
               </form>
             </motion.div>

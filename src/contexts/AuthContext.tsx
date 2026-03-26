@@ -99,7 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             createdAt: new Date().toISOString(),
             bio: '',
             followersCount: 0,
-            followingCount: 0
+            followingCount: 0,
+            profileSetupCompleted: false // Force profile setup for new users
           };
           
           const publicUserData: any = {
@@ -109,7 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             createdAt: newUserData.createdAt,
             bio: '',
             followersCount: 0,
-            followingCount: 0
+            followingCount: 0,
+            profileSetupCompleted: false
           };
           
           if (user.photoURL) {
@@ -129,17 +131,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await setDoc(doc(db, 'users_public', user.uid), { role: 'admin' }, { merge: true });
             setUserData(updatedData);
           } else {
-            setUserData(data);
+            const currentData = { ...data };
+            // If profileSetupCompleted is missing, we assume old users are "completed"
+            if (currentData.profileSetupCompleted === undefined) {
+              currentData.profileSetupCompleted = true;
+              await setDoc(userRef, { profileSetupCompleted: true }, { merge: true });
+              await setDoc(doc(db, 'users_public', user.uid), { profileSetupCompleted: true }, { merge: true });
+            }
+            
+            setUserData(currentData);
             // Ensure public profile exists/is synced
             await setDoc(doc(db, 'users_public', user.uid), {
-              uid: data.uid,
-              displayName: data.displayName,
-              photoURL: data.photoURL || null,
-              role: data.role,
-              createdAt: data.createdAt,
-              bio: data.bio || '',
-              followersCount: data.followersCount || 0,
-              followingCount: data.followingCount || 0
+              uid: currentData.uid,
+              displayName: currentData.displayName,
+              photoURL: currentData.photoURL || null,
+              role: currentData.role,
+              createdAt: currentData.createdAt,
+              bio: currentData.bio || '',
+              followersCount: currentData.followersCount || 0,
+              followingCount: currentData.followingCount || 0,
+              profileSetupCompleted: currentData.profileSetupCompleted
             }, { merge: true });
           }
         }

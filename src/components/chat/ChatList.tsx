@@ -4,16 +4,22 @@ import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProfileModal } from '../../contexts/ProfileModalContext';
 import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorHandler';
-import { MessageCircle, Plus, X, User as UserIcon, BadgeCheck } from 'lucide-react';
+import { MessageCircle, Plus, X, User as UserIcon, BadgeCheck, Loader2, Search, Filter } from 'lucide-react';
 import ChatRoom from './ChatRoom';
+import { toast } from 'sonner';
 
 export default function ChatList() {
   const { user, userData } = useAuth();
   const { openProfile } = useProfileModal();
   const [chats, setChats] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<any[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
+  const [isStartingChat, setIsStartingChat] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -35,14 +41,17 @@ export default function ChatList() {
         return timeB - timeA;
       });
       setChats(chatsData);
+      setIsLoading(false);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'chats');
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
   }, [user]);
 
   const loadUsers = async () => {
+    setIsLoadingUsers(true);
     try {
       const usersSnapshot = await getDocs(collection(db, 'users_public'));
       const usersData = usersSnapshot.docs
@@ -51,6 +60,9 @@ export default function ChatList() {
       setUsers(usersData);
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'users_public');
+      toast.error('Failed to load users');
+    } finally {
+      setIsLoadingUsers(false);
     }
   };
 
@@ -65,6 +77,7 @@ export default function ChatList() {
       return;
     }
 
+    setIsStartingChat(true);
     try {
       const newChatRef = await addDoc(collection(db, 'chats'), {
         participants: [user.uid, otherUser.id],
@@ -80,15 +93,32 @@ export default function ChatList() {
             role: otherUser.role || 'user'
           }
         },
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        unreadBy: []
       });
       
       setSelectedChatId(newChatRef.id);
       setIsNewChatModalOpen(false);
+      toast.success('Chat started');
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'chats');
+      toast.error('Failed to start chat');
+    } finally {
+      setIsStartingChat(false);
     }
   };
+
+  const filteredChats = chats.filter(chat => {
+    const otherUserId = chat.participants.find((id: string) => id !== user?.uid);
+    const otherUser = chat.participantDetails[otherUserId];
+    const matchesName = otherUser?.displayName?.toLowerCase().includes(searchQuery.toLowerCase());
+    const isUnread = chat.unreadBy?.includes(user?.uid);
+    
+    if (showUnreadOnly) {
+      return matchesName && isUnread;
+    }
+    return matchesName;
+  });
 
   if (selectedChatId) {
     return <ChatRoom chatId={selectedChatId} onBack={() => setSelectedChatId(null)} />;
@@ -96,42 +126,84 @@ export default function ChatList() {
 
   return (
     <div className="h-full w-full bg-slate-50 dark:bg-slate-950 flex flex-col relative transition-colors duration-300">
-      <div className="bg-white dark:bg-slate-900 px-4 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center sticky top-0 z-10 shadow-sm">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">Messages</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Chat with other users</p>
+      <div className="bg-white dark:bg-slate-900 px-4 py-4 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-10 shadow-sm">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">Messages</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Chat with other users</p>
+          </div>
+          <button 
+            onClick={() => {
+              loadUsers();
+              setIsNewChatModalOpen(true);
+            }}
+            className="bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 p-2.5 rounded-full hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors"
+          >
+            <Plus size={20} />
+          </button>
         </div>
-        <button 
-          onClick={() => {
-            loadUsers();
-            setIsNewChatModalOpen(true);
-          }}
-          className="bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 p-2.5 rounded-full hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors"
-        >
-          <Plus size={20} />
-        </button>
+
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input 
+              type="text"
+              placeholder="Search by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all"
+            />
+          </div>
+          <button 
+            onClick={() => setShowUnreadOnly(!showUnreadOnly)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+              showUnreadOnly 
+                ? 'bg-sky-600 text-white shadow-lg shadow-sky-200 dark:shadow-none' 
+                : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+            }`}
+          >
+            <Filter size={16} />
+            <span className="hidden sm:inline">Unread</span>
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 pb-24">
-        {chats.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="animate-spin text-sky-600 mb-4" size={40} />
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Loading chats...</p>
+          </div>
+        ) : filteredChats.length === 0 ? (
           <div className="text-center py-12 px-4">
             <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
               <MessageCircle size={32} className="text-slate-400 dark:text-slate-500" />
             </div>
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">No messages yet</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Start a new chat with other users in the community.</p>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">
+              {searchQuery || showUnreadOnly ? 'No matching chats' : 'No messages yet'}
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {searchQuery || showUnreadOnly 
+                ? 'Try adjusting your filters or search query.' 
+                : 'Start a new chat with other users in the community.'}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {chats.map(chat => {
+            {filteredChats.map(chat => {
               const otherUserId = chat.participants.find((id: string) => id !== user?.uid);
               const otherUser = chat.participantDetails[otherUserId];
+              const isUnread = chat.unreadBy?.includes(user?.uid);
               
               return (
                 <div 
                   key={chat.id} 
                   onClick={() => setSelectedChatId(chat.id)}
-                  className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex items-center gap-4 cursor-pointer hover:border-sky-200 dark:hover:border-sky-800 transition-colors active:scale-[0.98]"
+                  className={`bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border flex items-center gap-4 cursor-pointer transition-all active:scale-[0.98] ${
+                    isUnread 
+                      ? 'border-sky-500 dark:border-sky-500 bg-sky-50/30 dark:bg-sky-900/10' 
+                      : 'border-slate-100 dark:border-slate-800 hover:border-sky-200 dark:hover:border-sky-800'
+                  }`}
                 >
                   <button 
                     onClick={(e) => {
@@ -155,20 +227,27 @@ export default function ChatList() {
                           e.stopPropagation();
                           openProfile(otherUserId);
                         }}
-                        className="font-bold text-slate-800 dark:text-white truncate hover:underline flex items-center gap-1"
+                        className={`font-bold truncate hover:underline flex items-center gap-1 ${
+                          isUnread ? 'text-slate-900 dark:text-white' : 'text-slate-800 dark:text-slate-200'
+                        }`}
                       >
                         {otherUser?.displayName || 'User'}
                         {otherUser?.role === 'admin' && (
                           <BadgeCheck className="text-blue-500 flex-shrink-0" size={14} fill="currentColor" stroke="white" />
                         )}
                       </button>
-                      {chat.lastMessageTime && (
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 flex-shrink-0 ml-2">
-                          {new Date(chat.lastMessageTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {isUnread && (
+                          <span className="w-2 h-2 bg-sky-500 rounded-full"></span>
+                        )}
+                        {chat.lastMessageTime && (
+                          <span className={`text-[10px] flex-shrink-0 ${isUnread ? 'text-sky-600 dark:text-sky-400 font-bold' : 'text-slate-400 dark:text-slate-500'}`}>
+                            {new Date(chat.lastMessageTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                    <p className={`text-sm truncate ${isUnread ? 'text-slate-900 dark:text-slate-100 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
                       {chat.lastMessage || 'No messages yet'}
                     </p>
                   </div>
@@ -194,15 +273,21 @@ export default function ChatList() {
             </div>
             
             <div className="flex-1 overflow-y-auto p-4">
-              {users.length === 0 ? (
-                <div className="text-center py-8 text-slate-500 dark:text-slate-400">Loading users...</div>
+              {isLoadingUsers ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader2 className="animate-spin text-sky-600 mb-2" size={32} />
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">Finding users...</p>
+                </div>
+              ) : users.length === 0 ? (
+                <div className="text-center py-8 text-slate-500 dark:text-slate-400">No users found</div>
               ) : (
                 <div className="space-y-2">
                   {users.map(u => (
-                    <div 
+                    <button 
                       key={u.id}
+                      disabled={isStartingChat}
                       onClick={() => startChat(u)}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
+                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-700 disabled:opacity-50"
                     >
                       <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0">
                         {u.photoURL ? (
@@ -221,7 +306,7 @@ export default function ChatList() {
                           )}
                         </h4>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}

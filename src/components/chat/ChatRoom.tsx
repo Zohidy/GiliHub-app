@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProfileModal } from '../../contexts/ProfileModalContext';
@@ -26,7 +26,15 @@ export default function ChatRoom({ chatId, onBack }: ChatRoomProps) {
     const chatRef = doc(db, 'chats', chatId);
     const unsubscribeChat = onSnapshot(chatRef, (docSnap) => {
       if (docSnap.exists()) {
-        setChatDetails(docSnap.data());
+        const data = docSnap.data();
+        setChatDetails(data);
+        
+        // Mark as read if user is in unreadBy
+        if (data.unreadBy?.includes(user.uid)) {
+          updateDoc(chatRef, {
+            unreadBy: arrayRemove(user.uid)
+          }).catch(err => console.error("Error marking as read:", err));
+        }
       }
     });
 
@@ -64,6 +72,7 @@ export default function ChatRoom({ chatId, onBack }: ChatRoomProps) {
 
     try {
       const now = new Date().toISOString();
+      const otherUserId = chatDetails.participants.find((id: string) => id !== user.uid);
       
       // Add message
       await addDoc(collection(db, `chats/${chatId}/messages`), {
@@ -73,10 +82,11 @@ export default function ChatRoom({ chatId, onBack }: ChatRoomProps) {
         createdAt: now
       });
 
-      // Update chat last message
+      // Update chat last message and unreadBy
       await updateDoc(doc(db, 'chats', chatId), {
         lastMessage: text,
-        lastMessageTime: now
+        lastMessageTime: now,
+        unreadBy: arrayUnion(otherUserId)
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, `chats/${chatId}/messages`);

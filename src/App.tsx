@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Home from './components/home/Home';
 import InteractiveMap from './components/map/InteractiveMap';
 import BookingList from './components/booking/BookingList';
 import ForumList from './components/community/ForumList';
@@ -6,20 +7,22 @@ import UserProfile from './components/profile/UserProfile';
 import ChatList from './components/chat/ChatList';
 import EventCalendar from './components/events/EventCalendar';
 import Login from './components/auth/Login';
+import ProfileSetup from './components/auth/ProfileSetup';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ProfileModalProvider } from './contexts/ProfileModalContext';
 import PublicProfileModal from './components/profile/PublicProfileModal';
+import GiliBot from './components/chat/GiliBot';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { LogOut, User, MessageCircle, Calendar, Map as MapIcon, CalendarDays, MessageSquare, UserCircle, LayoutGrid, Sun, Moon } from 'lucide-react';
+import { LogOut, User, MessageCircle, Calendar, Map as MapIcon, CalendarDays, MessageSquare, UserCircle, LayoutGrid, Sun, Moon, Home as HomeIcon, ChevronLeft, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Logo } from './components/Logo';
 import { Toaster } from 'sonner';
 
 function MainApp() {
-  const { user, loading, signOut } = useAuth();
+  const { user, userData, loading, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState<'map' | 'booking' | 'events' | 'forum' | 'chat' | 'profile'>('map');
+  const [activeTab, setActiveTab] = useState<'home' | 'map' | 'booking' | 'events' | 'forum' | 'chat' | 'profile'>('home');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -58,84 +61,82 @@ function MainApp() {
     return <Login />;
   }
 
-  const navItems = [
-    { id: 'map', label: 'Map', icon: MapIcon },
-    { id: 'booking', label: 'Booking', icon: LayoutGrid },
-    { id: 'events', label: 'Events', icon: CalendarDays },
-    { id: 'forum', label: 'Forum', icon: MessageSquare },
-    { id: 'chat', label: 'Chat', icon: MessageCircle },
-    { id: 'profile', label: 'Profile', icon: UserCircle },
-  ];
+  // Check if profile setup is needed
+  if (user && !userData) {
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950">
+        <Loader2 className="animate-spin text-sky-500 mb-4" size={40} />
+        <p className="text-slate-400 font-medium">Syncing profile...</p>
+      </div>
+    );
+  }
+
+  if (user && userData && !userData.profileSetupCompleted) {
+    return <ProfileSetup />;
+  }
 
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 px-5 py-3 z-20 flex justify-between items-center sticky top-0 supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-md shadow-sky-500/20">
-            <Logo className="text-white" size={22} />
+      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3 z-20 flex justify-between items-center sticky top-0">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-600/20">
+            <Logo className="text-white" size={20} />
           </div>
-          <div className="flex flex-col justify-center">
-            <div className="flex items-center gap-2">
-              <h1 className="text-[1.35rem] font-black text-slate-900 dark:text-white tracking-tight leading-none">GiliHub</h1>
-              {user?.isAnonymous && (
-                <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[9px] font-bold uppercase tracking-wider rounded border border-amber-200/50 dark:border-amber-800/50">
-                  Guest
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 mt-1.5">
-              <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse shadow-[0_0_4px_rgba(16,185,129,0.5)]' : 'bg-rose-500'}`}></span>
-              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none">
-                {isOnline ? 'Live' : 'Offline Mode'}
-              </span>
-            </div>
-          </div>
+          <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">GiliHub</h1>
         </div>
         
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button 
             onClick={toggleTheme}
-            className="p-2 text-slate-400 dark:text-slate-500 hover:text-sky-500 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-xl transition-all active:scale-95"
-            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            className="p-2 text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+            title="Toggle Theme"
           >
-            {theme === 'light' ? <Moon size={20} strokeWidth={2.5} /> : <Sun size={20} strokeWidth={2.5} />}
+            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </button>
-          <button 
-            onClick={signOut}
-            className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all active:scale-95"
-            title="Sign Out"
-          >
-            <LogOut size={20} strokeWidth={2.5} />
-          </button>
-        </div>
-      </header>
+          
+          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
 
-      {/* Guest Warning Banner */}
-      {user?.isAnonymous && (
-        <div className="bg-amber-100 dark:bg-amber-900/40 border-b border-amber-200 dark:border-amber-800 px-4 py-3 flex items-center justify-between z-10 relative">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-amber-200 dark:bg-amber-800/50 rounded-lg">
-              <User size={16} className="text-amber-700 dark:text-amber-400" />
+          <div className="flex items-center gap-2 pl-1">
+            <div className="hidden sm:flex flex-col items-end">
+              <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight leading-none">{userData?.displayName}</span>
+              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">{userData?.role || 'User'}</span>
             </div>
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-              Peringatan: Akun guest akan dihapus setelah 30 hari. <button onClick={signOut} className="font-bold underline hover:text-amber-900 dark:hover:text-amber-200">Kaitkan akun anda sekarang!</button>
-            </p>
+            <button 
+              onClick={() => setActiveTab('profile')}
+              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-700 overflow-hidden shadow-sm hover:ring-2 hover:ring-sky-500/20 transition-all"
+            >
+              {userData?.photoURL ? (
+                <img src={userData.photoURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500">
+                  <User size={18} />
+                </div>
+              )}
+            </button>
+            <button 
+              onClick={signOut}
+              className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all group"
+              title="Sign Out"
+            >
+              <LogOut size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+            </button>
           </div>
         </div>
-      )}
+      </header>
 
       {/* Main Content Area */}
       <main className="flex-1 relative z-0 overflow-hidden flex flex-col">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
             className="h-full w-full"
           >
+            {activeTab === 'home' && <Home setActiveTab={setActiveTab} />}
             {activeTab === 'map' && <InteractiveMap />}
             {activeTab === 'booking' && <BookingList />}
             {activeTab === 'events' && <EventCalendar />}
@@ -146,38 +147,79 @@ function MainApp() {
         </AnimatePresence>
       </main>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-6 left-0 right-0 px-6 z-30 pointer-events-none">
-        <nav className="max-w-md mx-auto bg-slate-900/90 dark:bg-black/80 backdrop-blur-xl border border-white/10 rounded-3xl p-2 flex justify-around items-center shadow-2xl pointer-events-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button 
-                key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
-                className={`relative flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 ${
-                  isActive 
-                    ? 'text-white bg-sky-600 shadow-lg shadow-sky-600/40 scale-110' 
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Icon size={20} />
-                {isActive && (
-                  <motion.div 
-                    layoutId="nav-pill"
-                    className="absolute -bottom-1 w-1 h-1 bg-white rounded-full"
-                  />
-                )}
-                <span className={`absolute -bottom-6 text-[10px] font-bold uppercase tracking-widest transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-0'}`}>
-                  {item.label}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+      {/* Bottom Navigation Bar */}
+      <nav className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-6 py-3 pb-8 sm:pb-3 flex justify-around items-center sticky bottom-0 z-20 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-none">
+        <NavButton 
+          active={activeTab === 'home'} 
+          onClick={() => setActiveTab('home')} 
+          icon={<HomeIcon size={20} />} 
+          label="Home" 
+        />
+        <NavButton 
+          active={activeTab === 'map'} 
+          onClick={() => setActiveTab('map')} 
+          icon={<MapIcon size={20} />} 
+          label="Map" 
+        />
+        <NavButton 
+          active={activeTab === 'booking'} 
+          onClick={() => setActiveTab('booking')} 
+          icon={<LayoutGrid size={20} />} 
+          label="Booking" 
+        />
+        <NavButton 
+          active={activeTab === 'events'} 
+          onClick={() => setActiveTab('events')} 
+          icon={<CalendarDays size={20} />} 
+          label="Events" 
+        />
+        <NavButton 
+          active={activeTab === 'forum'} 
+          onClick={() => setActiveTab('forum')} 
+          icon={<MessageSquare size={20} />} 
+          label="Forum" 
+        />
+        <NavButton 
+          active={activeTab === 'chat'} 
+          onClick={() => setActiveTab('chat')} 
+          icon={<MessageCircle size={20} />} 
+          label="Chat" 
+        />
+      </nav>
+      <GiliBot />
     </div>
+  );
+}
+
+interface NavButtonProps {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}
+
+function NavButton({ active, onClick, icon, label }: NavButtonProps) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`flex flex-col items-center gap-1.5 transition-all relative group ${
+        active 
+          ? 'text-sky-600 dark:text-sky-400' 
+          : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+      }`}
+    >
+      <div className={`p-1.5 rounded-xl transition-all duration-300 ${active ? 'bg-sky-50 dark:bg-sky-900/30 scale-110' : 'group-hover:bg-slate-50 dark:group-hover:bg-slate-800'}`}>
+        {icon}
+      </div>
+      <span className={`text-[9px] font-black uppercase tracking-widest transition-all ${active ? 'opacity-100' : 'opacity-70'}`}>{label}</span>
+      {active && (
+        <motion.div 
+          layoutId="nav-indicator"
+          className="absolute -top-3 w-10 h-1 bg-sky-600 dark:bg-sky-400 rounded-full shadow-[0_0_10px_rgba(2,132,199,0.5)]"
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        />
+      )}
+    </button>
   );
 }
 

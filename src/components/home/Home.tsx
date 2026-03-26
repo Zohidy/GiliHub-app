@@ -1,0 +1,390 @@
+import React from 'react';
+import { motion } from 'motion/react';
+import { Map, Calendar, MessageSquare, User, LayoutGrid, MessageCircle, ChevronRight, Cloud, Sun, Thermometer, Droplets, Wind, Clock, MapPin } from 'lucide-react';
+
+import { collection, query, onSnapshot, where, limit } from 'firebase/firestore';
+import { db } from '../../config/firebase';
+
+interface HomeProps {
+  setActiveTab: (tab: 'home' | 'map' | 'booking' | 'events' | 'forum' | 'chat' | 'profile') => void;
+}
+
+function TodayEvents() {
+  const [todayEvents, setTodayEvents] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const q = query(
+      collection(db, 'events'),
+      where('date', '==', today),
+      limit(3)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTodayEvents(docs);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (todayEvents.length === 0) return null;
+
+  return (
+    <div className="mb-10">
+      <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Happening Today</h3>
+      <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+        {todayEvents.map((event, index) => (
+          <div key={index} className="min-w-[280px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
+            <div className="flex justify-between items-start mb-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20 px-2 py-1 rounded-lg">
+                {event.category}
+              </span>
+              <div className="flex items-center gap-1 text-slate-400">
+                <Clock size={12} />
+                <span className="text-[10px] font-bold">{event.time}</span>
+              </div>
+            </div>
+            <h4 className="font-bold text-slate-900 dark:text-white mb-1">{event.title}</h4>
+            <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 mb-4">
+              <MapPin size={12} />
+              <span className="text-[10px] font-medium">{event.location}</span>
+            </div>
+            <button className="w-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 py-2 rounded-xl text-xs font-bold hover:bg-sky-600 hover:text-white transition-all">
+              Join Event
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function WeatherWidget() {
+  return (
+    <div className="bg-gradient-to-br from-sky-400 to-sky-600 rounded-3xl p-6 text-white shadow-xl shadow-sky-500/20 mb-10 relative overflow-hidden">
+      <div className="absolute -right-4 -top-4 opacity-20">
+        <Sun size={120} />
+      </div>
+      <div className="relative z-10">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h3 className="text-sky-100 font-bold text-xs uppercase tracking-widest mb-1">Current Weather</h3>
+            <div className="flex items-center gap-2">
+              <Sun className="text-amber-300" size={32} />
+              <span className="text-4xl font-black">29°C</span>
+            </div>
+            <p className="text-sky-100 text-sm font-medium mt-1">Sunny & Clear Sky</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sky-100 font-bold text-sm">Gili Trawangan</p>
+            <p className="text-sky-200 text-[10px] uppercase tracking-wider">Lombok, Indonesia</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-4 border-t border-white/20 pt-6">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1.5 text-sky-100 mb-1">
+              <Droplets size={14} />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Humidity</span>
+            </div>
+            <p className="text-sm font-black">78%</p>
+          </div>
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1.5 text-sky-100 mb-1">
+              <Wind size={14} />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Wind</span>
+            </div>
+            <p className="text-sm font-black">12 km/h</p>
+          </div>
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1.5 text-sky-100 mb-1">
+              <Thermometer size={14} />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Feels Like</span>
+            </div>
+            <p className="text-sm font-black">32°C</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Home({ setActiveTab }: HomeProps) {
+  const navItems = [
+    { title: 'Explore Map', icon: Map, desc: 'Find locations and services', tab: 'map' },
+    { title: 'My Bookings', icon: LayoutGrid, desc: 'Manage your reservations', tab: 'booking' },
+    { title: 'Events', icon: Calendar, desc: 'Upcoming island events', tab: 'events' },
+    { title: 'Forum', icon: MessageSquare, desc: 'Community discussions', tab: 'forum' },
+    { title: 'Chat', icon: MessageCircle, desc: 'Connect with others', tab: 'chat' },
+    { title: 'My Profile', icon: User, desc: 'Manage your account', tab: 'profile' },
+  ];
+
+  const guideSections = [
+    {
+      title: 'How to Get There',
+      content: 'Most travelers take a fast boat from Padang Bai, Bali. Recommended: Ekajaya (approx. 725k IDR return). Other reliable operators: Austina, Freebird, Golden Queen, and Samaya.',
+      icon: '🚢'
+    },
+    {
+      title: 'Island Transport',
+      content: 'There are no motorized vehicles on the Gili Islands. The best way to get around is by renting a bicycle (approx. 60k-80k IDR/day). Avoid horse carts (cidomo) for animal welfare reasons.',
+      icon: '🚲'
+    },
+    {
+      title: 'Snorkeling & Diving',
+      content: 'Gili T is famous for its sea turtles. Popular spots include Turtle Point and the Underwater Statues. You can join a group tour or rent a private boat for more flexibility.',
+      icon: '🤿'
+    },
+    {
+      title: 'Nightlife & Dining',
+      content: 'The Night Market opens at sunset near the harbor for fresh seafood. For parties, different bars host events on specific nights (e.g., Blue Marlin on Mondays, Irish Bar on Wednesdays).',
+      icon: '🍹'
+    },
+    {
+      title: 'Inter-Island Boats',
+      content: 'Public boats run between Gili T, Meno, and Air. Gili T to Air: 08:30 & 15:00 (45k IDR). Gili Air to T: 09:30 & 16:00 (45k IDR). Local boats to Lombok run from 07:00-17:00 (20k IDR).',
+      icon: '🚤'
+    }
+  ];
+
+  const mustVisitPlaces = [
+    { name: 'Night Market', desc: 'Fresh seafood buffet at sunset.', icon: '🌙' },
+    { name: 'Turtle Point', desc: 'Best spot to swim with sea turtles.', icon: '🐢' },
+    { name: 'Underwater Statues', desc: 'Famous Gili Meno statues (Nest).', icon: '🗿' },
+    { name: 'West Coast Sunset', desc: 'Best bars for bean bag sunsets.', icon: '🌅' },
+  ];
+
+  const foodRecommendations = [
+    { name: 'Banyan Tree', desc: 'Famous for Zucchini Lasagna.', type: 'Cafe' },
+    { name: 'Regina Pizza', desc: 'Authentic Italian wood-fired pizza.', type: 'Dinner' },
+    { name: 'Tiki Grove', desc: 'Top-rated Mexican food.', type: 'Dinner' },
+    { name: 'Fat Cats', desc: 'Great burgers and beach vibes.', type: 'Beach Club' },
+    { name: 'Hello Capitano', desc: 'Best smoothie bowls on the island.', type: 'Breakfast' },
+    { name: 'Sasak Bistro', desc: 'Authentic local Lombok cuisine.', type: 'Local' },
+  ];
+
+  const travelTips = [
+    { title: 'Keep Your Tickets', content: 'Always keep your hardcopy boat tickets. There is no electronic system, and losing them means buying new ones.', icon: '🎫' },
+    { title: 'Arrive Early', content: 'Check-in at the harbor at least 1 hour before departure to avoid losing your seat due to overselling.', icon: '⏰' },
+    { title: 'Go Barefoot', content: 'Embrace the "island life" by leaving your shoes at your villa. Most places are sand-friendly!', icon: '👣' },
+    { title: 'Cash is King', content: 'While many places take cards, smaller warungs and local boats only accept IDR cash.', icon: '💵' },
+  ];
+
+  const emergencyContacts = [
+    { name: 'Medical Clinic', phone: '+62 819 9773 5335', desc: 'Gili T Medical Center (24/7)' },
+    { name: 'Local Police', phone: '+62 370 613 1110', desc: 'Harbor Police Post' },
+    { name: 'Ekajaya Boat', phone: '+62 812 3770 000', desc: 'Fast boat support' },
+  ];
+
+  const islandRules = [
+    { title: 'No Motors', content: 'Only bicycles and horse carts (cidomo) are allowed. Enjoy the silence!', icon: '🚫🏍️' },
+    { title: 'Reef Protection', content: 'Do not touch turtles or coral. Use reef-safe sunscreen.', icon: '🪸🐢' },
+    { title: 'Modest Dress', content: 'When walking through the village area, please cover your shoulders and knees.', icon: '👕👖' },
+    { title: 'Strict Drug Laws', content: 'Indonesia has extremely strict drug laws. Stay safe and stay clean.', icon: '⚖️🚫' },
+  ];
+
+  const divingSpots = [
+    { name: 'Shark Point', desc: 'See reef sharks and large turtles.', depth: '18-30m' },
+    { name: 'Manta Point', desc: 'Seasonal manta rays and vibrant coral.', depth: '10-25m' },
+    { name: 'Hans Reef', desc: 'Great for macro photography and frogfish.', depth: '5-20m' },
+    { name: 'Deep Turbo', desc: 'Advanced drift dive with sea fans.', depth: '25-40m' },
+  ];
+
+  const accommodations = [
+    { name: 'Manta Dive', desc: 'Best for divers, central location.', price: 'Mid-Range' },
+    { name: 'Villa Rumorinda', desc: 'Private villas with pools.', price: 'Luxury' },
+    { name: 'Havana Hideaway', desc: 'Boutique stay with great vibes.', price: 'Boutique' },
+    { name: 'Gili La Boheme', desc: 'Social atmosphere, budget friendly.', price: 'Budget' },
+  ];
+
+  const nightlifeSchedule = [
+    { day: 'Monday', place: 'Blue Marlin Dive Center', icon: '🦈' },
+    { day: 'Tuesday', place: 'Gili Bar Crawl', icon: '🍻' },
+    { day: 'Wednesday', place: 'Irish Bar & Boat Party', icon: '☘️' },
+    { day: 'Friday', place: 'Jungle Club (Summer Summer)', icon: '🌴' },
+  ];
+
+  return (
+    <div className="p-6 h-full overflow-y-auto bg-slate-50 dark:bg-slate-950">
+      <div className="mb-8">
+        <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Welcome back!</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">What would you like to do today?</p>
+      </div>
+
+      <WeatherWidget />
+
+      <TodayEvents />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-10">
+        {navItems.map((item, index) => (
+          <motion.button
+            key={index}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setActiveTab(item.tab as any)}
+            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-4 hover:border-sky-500 dark:hover:border-sky-500 transition-all shadow-sm group"
+          >
+            <div className="bg-sky-100 dark:bg-sky-900/30 p-3 rounded-xl text-sky-600 dark:text-sky-400 group-hover:bg-sky-600 group-hover:text-white transition-colors">
+              <item.icon size={24} />
+            </div>
+            <div className="flex-1 text-left">
+              <h3 className="font-bold text-slate-900 dark:text-white">{item.title}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{item.desc}</p>
+            </div>
+            <ChevronRight className="text-slate-400 group-hover:text-sky-500 transition-colors" size={20} />
+          </motion.button>
+        ))}
+      </div>
+
+      <div className="mb-10">
+        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Island Quick Guide</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {guideSections.map((section, index) => (
+            <div key={index} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-2xl">{section.icon}</span>
+                <h4 className="font-bold text-slate-900 dark:text-white">{section.title}</h4>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                {section.content}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+        <div>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Must Visit</h3>
+          <div className="space-y-3">
+            {mustVisitPlaces.map((place, index) => (
+              <div key={index} className="flex items-center gap-4 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="text-2xl w-12 h-12 flex items-center justify-center bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  {place.icon}
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">{place.name}</h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{place.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Top Food</h3>
+          <div className="space-y-3">
+            {foodRecommendations.map((food, index) => (
+              <div key={index} className="flex items-center justify-between bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">{food.name}</h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{food.desc}</p>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20 px-2 py-1 rounded-lg">
+                  {food.type}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-10">
+        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Top Diving Spots</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {divingSpots.map((spot, index) => (
+            <div key={index} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+              <h4 className="font-bold text-slate-900 dark:text-white text-xs mb-1">{spot.name}</h4>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mb-2">{spot.desc}</p>
+              <span className="text-[9px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20 px-1.5 py-0.5 rounded-md">
+                {spot.depth}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-10">
+        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Where to Stay</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {accommodations.map((acc, index) => (
+            <div key={index} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white text-sm">{acc.name}</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{acc.desc}</p>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg">
+                {acc.price}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-10">
+        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Weekly Party Schedule</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {nightlifeSchedule.map((party, index) => (
+            <div key={index} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm text-center">
+              <span className="text-2xl mb-2 block">{party.icon}</span>
+              <h4 className="font-bold text-slate-900 dark:text-white text-[10px] uppercase tracking-wider mb-1">{party.day}</h4>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-tight">{party.place}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-10">
+        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Pro Travel Tips</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {travelTips.map((tip, index) => (
+            <div key={index} className="bg-sky-50 dark:bg-sky-900/10 border border-sky-100 dark:border-sky-900/30 rounded-2xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-xl">{tip.icon}</span>
+                <h4 className="font-bold text-sky-900 dark:text-sky-400 text-sm">{tip.title}</h4>
+              </div>
+              <p className="text-xs text-sky-800/70 dark:text-sky-400/70 leading-relaxed">
+                {tip.content}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+        <div>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Island Rules</h3>
+          <div className="space-y-3">
+            {islandRules.map((rule, index) => (
+              <div key={index} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="text-lg">{rule.icon}</span>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">{rule.title}</h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{rule.content}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Emergency Contacts</h3>
+          <div className="space-y-3">
+            {emergencyContacts.map((contact, index) => (
+              <div key={index} className="bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 p-4 rounded-2xl">
+                <div className="flex justify-between items-start mb-1">
+                  <h4 className="font-bold text-rose-900 dark:text-rose-400 text-sm">{contact.name}</h4>
+                  <a href={`tel:${contact.phone}`} className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline">
+                    {contact.phone}
+                  </a>
+                </div>
+                <p className="text-xs text-rose-800/70 dark:text-rose-400/70">{contact.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

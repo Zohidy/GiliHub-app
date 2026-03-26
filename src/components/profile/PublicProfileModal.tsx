@@ -176,6 +176,22 @@ export default function PublicProfileModal() {
               {profileData.bio && (
                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 mb-4 whitespace-pre-wrap">{profileData.bio}</p>
               )}
+              {profileData.interests && profileData.interests.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {profileData.interests.map((interest: string) => (
+                    <span key={interest} className="text-[10px] font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 px-2 py-1 rounded-full">{interest}</span>
+                  ))}
+                </div>
+              )}
+              {profileData.socialLinks && Object.keys(profileData.socialLinks).length > 0 && (
+                <div className="flex gap-3 mb-4">
+                  {Object.entries(profileData.socialLinks).map(([platform, url]) => (
+                    <a key={platform} href={url as string} target="_blank" rel="noopener noreferrer" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400">
+                      <User size={16} />
+                    </a>
+                  ))}
+                </div>
+              )}
               
               <div className="flex gap-6 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex flex-col">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { User, Mail, Shield, Calendar, LogOut, Edit2, Check, X, Loader2, AlertTriangle, Link as LinkIcon, Settings, Moon, Sun, Bell, Globe, ChevronRight, Download, CircleDollarSign, Ruler, BadgeCheck } from 'lucide-react';
+import { User, Mail, Shield, Calendar, LogOut, Edit2, Check, X, Loader2, AlertTriangle, Link as LinkIcon, Settings, Moon, Sun, Bell, Globe, ChevronRight, Download, CircleDollarSign, Ruler, BadgeCheck, Plus, Trash2, Twitter, Instagram, Facebook, Linkedin, Github } from 'lucide-react';
 import { doc, updateDoc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorHandler';
@@ -14,6 +14,8 @@ export default function UserProfile() {
   const [editName, setEditName] = useState('');
   const [editPhotoURL, setEditPhotoURL] = useState('');
   const [editBio, setEditBio] = useState('');
+  const [editInterests, setEditInterests] = useState('');
+  const [editSocialLinks, setEditSocialLinks] = useState<{ platform: string, url: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -33,6 +35,12 @@ export default function UserProfile() {
     setEditName(userData.displayName);
     setEditPhotoURL(userData.photoURL || '');
     setEditBio(userData.bio || '');
+    setEditInterests(userData.interests?.join(', ') || '');
+    const links = userData.socialLinks ? Object.entries(userData.socialLinks).map(([platform, url]) => ({ 
+      platform: platform.charAt(0).toUpperCase() + platform.slice(1), 
+      url: url as string 
+    })) : [];
+    setEditSocialLinks(links);
     setIsEditing(true);
   };
 
@@ -46,6 +54,14 @@ export default function UserProfile() {
     try {
       const trimmedName = editName.trim();
       const trimmedBio = editBio.trim();
+      const interestsArray = editInterests.split(',').map(i => i.trim()).filter(i => i !== '');
+      
+      const socialLinksObj = editSocialLinks.reduce((acc, link) => {
+        if (link.platform && link.url) {
+          acc[link.platform.toLowerCase()] = link.url;
+        }
+        return acc;
+      }, {} as Record<string, string>);
       
       // Check if username changed and if it's unique
       if (trimmedName !== userData.displayName) {
@@ -80,7 +96,9 @@ export default function UserProfile() {
       const updates = { 
         displayName: trimmedName,
         photoURL: editPhotoURL || null,
-        bio: trimmedBio || ''
+        bio: trimmedBio || '',
+        interests: interestsArray,
+        socialLinks: socialLinksObj
       };
 
       await updateDoc(userRef, updates);
@@ -113,8 +131,33 @@ export default function UserProfile() {
     return date.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
+  const addSocialLink = () => {
+    setEditSocialLinks([...editSocialLinks, { platform: 'Website', url: '' }]);
+  };
+
+  const removeSocialLink = (index: number) => {
+    setEditSocialLinks(editSocialLinks.filter((_, i) => i !== index));
+  };
+
+  const updateSocialLink = (index: number, field: 'platform' | 'url', value: string) => {
+    const newLinks = [...editSocialLinks];
+    newLinks[index] = { ...newLinks[index], [field]: value };
+    setEditSocialLinks(newLinks);
+  };
+
+  const getPlatformIcon = (platform: string) => {
+    switch (platform.toLowerCase()) {
+      case 'twitter': return <Twitter size={18} />;
+      case 'instagram': return <Instagram size={18} />;
+      case 'facebook': return <Facebook size={18} />;
+      case 'linkedin': return <Linkedin size={18} />;
+      case 'github': return <Github size={18} />;
+      default: return <LinkIcon size={18} />;
+    }
+  };
+
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-50 dark:bg-slate-950 p-4 pb-24 relative transition-colors duration-300">
+    <div className="h-full w-full overflow-y-auto bg-slate-50 dark:bg-slate-950 p-4 pb-24 transition-colors duration-300">
       {user?.isAnonymous && (
         <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl flex flex-col gap-3 shadow-sm">
           <div className="flex items-start gap-3 text-amber-700 dark:text-amber-400">
@@ -138,156 +181,140 @@ export default function UserProfile() {
 
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">My Profile</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your account information.</p>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-6">
-        <div className="bg-sky-600 h-24"></div>
-        <div className="px-6 pb-6 relative">
-          <div className="flex justify-between items-end -mt-12 mb-4">
-            <div className="w-24 h-24 rounded-full border-4 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 overflow-hidden flex items-center justify-center shadow-md">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Profile Card - Spans 2 columns */}
+        <div className="md:col-span-2 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 flex flex-col gap-4">
+          <div className="flex justify-between items-start">
+            <div className="w-20 h-20 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex items-center justify-center shadow-md">
               {userData.photoURL ? (
                 <img src={userData.photoURL} alt={userData.displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : (
                 <User size={40} className="text-slate-400 dark:text-slate-500" />
               )}
             </div>
-            <div className="flex gap-2">
-              {isEditing ? (
-                <>
-                  <button 
-                    onClick={handleSave}
-                    disabled={isSubmitting}
-                    className="p-2 bg-emerald-500 text-white rounded-full shadow-md hover:bg-emerald-600 transition-colors disabled:opacity-50"
-                  >
-                    {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                  </button>
-                  <button 
-                    onClick={() => setIsEditing(false)}
-                    disabled={isSubmitting}
-                    className="p-2 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full shadow-md hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
-                  >
-                    <X size={16} />
-                  </button>
-                </>
-              ) : (
-                <button 
-                  onClick={handleEdit}
-                  className="p-2 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full shadow-md border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <Edit2 size={16} />
-                </button>
-              )}
-            </div>
+            <button 
+              onClick={isEditing ? handleSave : handleEdit}
+              disabled={isSubmitting}
+              className="p-3 bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 rounded-full hover:bg-sky-100 dark:hover:bg-sky-900/50 transition-colors"
+            >
+              {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : (isEditing ? <Check size={20} /> : <Edit2 size={20} />)}
+            </button>
           </div>
 
           {isEditing ? (
-            <div className="space-y-3 mb-1">
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Display Name</label>
-                <input 
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="text-xl font-bold text-slate-800 dark:text-white border-b-2 border-sky-500 focus:outline-none bg-transparent w-full"
-                  autoFocus
-                  maxLength={50}
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Photo URL</label>
-                <input 
-                  type="text"
-                  value={editPhotoURL}
-                  onChange={(e) => setEditPhotoURL(e.target.value)}
-                  placeholder="https://example.com/photo.jpg"
-                  className="text-sm text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 focus:outline-none focus:border-sky-500 bg-transparent w-full py-1"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bio</label>
-                <textarea 
-                  value={editBio}
-                  onChange={(e) => setEditBio(e.target.value)}
-                  placeholder="Tell us about yourself..."
-                  className="text-sm text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:border-sky-500 bg-transparent w-full p-2 mt-1 resize-none"
-                  rows={3}
-                  maxLength={500}
-                />
-              </div>
+            <div className="space-y-3">
+              <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="text-2xl font-bold bg-transparent border-b border-sky-500 w-full focus:outline-none" maxLength={50} />
+              <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="text-sm bg-transparent border border-slate-200 dark:border-slate-700 rounded-xl w-full p-3" rows={3} maxLength={500} placeholder="Bio..." />
             </div>
           ) : (
-            <>
-              <div className="flex items-center gap-1.5 mb-1">
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white">{userData.displayName}</h3>
-                {userData.role === 'admin' && (
-                  <BadgeCheck className="text-blue-500" size={20} fill="currentColor" stroke="white" />
-                )}
-              </div>
-              {userData.bio && (
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 mb-4 whitespace-pre-wrap">{userData.bio}</p>
-              )}
-              <div className="flex gap-4 mt-3 mb-2">
-                <div className="flex flex-col">
-                  <span className="text-lg font-bold text-slate-800 dark:text-white">{userData.followersCount || 0}</span>
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Followers</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-lg font-bold text-slate-800 dark:text-white">{userData.followingCount || 0}</span>
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Following</span>
-                </div>
-              </div>
-            </>
-          )}
-          
-          <div className="space-y-3 mt-6">
-            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
-              <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
-                <Mail size={16} />
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Email</p>
-                  {user && user.providerData.some(p => p.providerId === 'password') && (
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${user.emailVerified ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'}`}>
-                      {user.emailVerified ? 'Verified' : 'Unverified'}
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{userData.email}</p>
-                {user && !user.emailVerified && user.providerData.some(p => p.providerId === 'password') && (
-                  <button 
-                    onClick={handleResendVerification}
-                    disabled={verificationSent}
-                    className="text-[10px] text-sky-600 dark:text-sky-400 font-bold hover:underline mt-1 disabled:text-slate-400 dark:disabled:text-slate-600"
-                  >
-                    {verificationSent ? 'Verification Email Sent!' : 'Resend Verification Email'}
-                  </button>
-                )}
-              </div>
+            <div>
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-white">{userData.displayName}</h3>
+              <p className="text-slate-500 dark:text-slate-400 mt-2">{userData.bio || 'No bio yet.'}</p>
             </div>
+          )}
+        </div>
 
-            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
-              <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
-                <Calendar size={16} />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Joined Since</p>
-                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{userData.createdAt ? formatDate(userData.createdAt) : '-'}</p>
-              </div>
+        {/* Stats Card */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 flex flex-col justify-between">
+          <h4 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Community</h4>
+          <div className="flex justify-between mt-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-slate-800 dark:text-white">{userData.followersCount || 0}</p>
+              <p className="text-xs text-slate-500">Followers</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-slate-800 dark:text-white">{userData.followingCount || 0}</p>
+              <p className="text-xs text-slate-500">Following</p>
             </div>
           </div>
+        </div>
+
+        {/* Interests Card - Spans 2 columns */}
+        <div className="md:col-span-2 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
+          <h4 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Interests</h4>
+          {isEditing ? (
+            <input type="text" value={editInterests} onChange={(e) => setEditInterests(e.target.value)} className="text-sm bg-transparent border-b border-slate-200 dark:border-slate-700 w-full p-2" placeholder="surfing, coding, travel" />
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {userData.interests?.map((interest: string) => (
+                <span key={interest} className="text-xs font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 px-3 py-1 rounded-full">{interest}</span>
+              )) || <p className="text-slate-400 text-sm">No interests added.</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Social Links Card */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
+          <h4 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Social</h4>
+          {isEditing ? (
+            <div className="space-y-3">
+              {editSocialLinks.map((link, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <select 
+                    value={link.platform} 
+                    onChange={(e) => updateSocialLink(index, 'platform', e.target.value)}
+                    className="text-[10px] font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                  >
+                    <option value="Twitter">Twitter</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="Facebook">Facebook</option>
+                    <option value="LinkedIn">LinkedIn</option>
+                    <option value="GitHub">GitHub</option>
+                    <option value="Website">Website</option>
+                  </select>
+                  <input 
+                    type="url" 
+                    value={link.url} 
+                    onChange={(e) => updateSocialLink(index, 'url', e.target.value)}
+                    placeholder="https://..."
+                    className="flex-1 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                  />
+                  <button onClick={() => removeSocialLink(index)} className="text-rose-500 p-1 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+              <button 
+                onClick={addSocialLink}
+                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-bold text-slate-400 hover:border-sky-500 hover:text-sky-500 transition-all flex items-center justify-center gap-2"
+              >
+                <Plus size={14} />
+                Add Link
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {userData.socialLinks && Object.entries(userData.socialLinks).length > 0 ? (
+                Object.entries(userData.socialLinks).map(([platform, url]) => (
+                  <a 
+                    key={platform} 
+                    href={url as string} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all"
+                    title={platform}
+                  >
+                    {getPlatformIcon(platform)}
+                  </a>
+                ))
+              ) : (
+                <p className="text-slate-400 text-sm italic">No social links.</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Settings Section */}
-      <div className="mb-6">
+      <div className="mt-6">
         <h2 className="text-lg font-bold text-slate-800 dark:text-white tracking-tight mb-3 flex items-center gap-2">
           <Settings size={20} className="text-sky-500" />
           Settings
         </h2>
         
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
           
           {/* Theme Toggle */}
           <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onClick={toggleTheme}>
@@ -390,7 +417,7 @@ export default function UserProfile() {
 
       <button 
         onClick={signOut}
-        className="w-full bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 font-bold py-3 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors flex items-center justify-center gap-2 shadow-sm"
+        className="w-full mt-6 bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 font-bold py-4 rounded-2xl hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors flex items-center justify-center gap-2 shadow-sm"
       >
         <LogOut size={18} />
         Sign Out

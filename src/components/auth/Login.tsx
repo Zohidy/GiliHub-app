@@ -228,13 +228,13 @@ export default function Login() {
       </div>
 
       {/* Right Side: Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-white relative">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-white dark:bg-slate-950 relative">
         {/* Mobile Logo */}
         <div className="lg:hidden absolute top-8 left-8 flex items-center gap-2">
           <div className="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center shadow-lg shadow-sky-500/20">
             <Logo className="text-white" size={18} />
           </div>
-          <span className="text-xl font-black text-slate-900 tracking-tighter">GiliHub</span>
+          <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">GiliHub</span>
         </div>
 
         <motion.div 
@@ -243,28 +243,34 @@ export default function Login() {
           className="w-full max-w-md"
         >
           <div className="mb-10">
-            <h2 className="text-4xl font-black text-slate-900 tracking-tighter leading-none">
-              {authMode === 'anonymous' ? 'Explore as Guest.' : isLogin ? 'Welcome back.' : 'Join the island.'}
-            </h2>
-            <p className="text-slate-500 mt-3 font-medium">
-              {authMode === 'anonymous' 
-                ? "Try the app without an account." 
-                : isLogin 
-                  ? "Don't have an account? " 
-                  : "Already have an account? "}
-              {authMode !== 'anonymous' && (
-                <button 
-                  onClick={() => setIsLogin(!isLogin)}
-                  className="text-sky-600 font-bold hover:underline underline-offset-4"
-                >
-                  {isLogin ? 'Create one now' : 'Sign in here'}
-                </button>
-              )}
-            </p>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
+                {authMode === 'anonymous' ? 'Explore as Guest.' : isLogin ? 'Welcome back.' : 'Join the island.'}
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 mt-3 font-medium">
+                {authMode === 'anonymous' 
+                  ? "Try the app without an account." 
+                  : isLogin 
+                    ? "Don't have an account? " 
+                    : "Already have an account? "}
+                {authMode !== 'anonymous' && (
+                  <button 
+                    onClick={() => setIsLogin(!isLogin)}
+                    className="text-sky-600 dark:text-sky-400 font-bold hover:underline underline-offset-4"
+                  >
+                    {isLogin ? 'Create one now' : 'Sign in here'}
+                  </button>
+                )}
+              </p>
+            </motion.div>
           </div>
 
           {/* Auth Method Tabs */}
-          <div className="flex p-1 bg-slate-100 rounded-2xl mb-8">
+          <div className="flex p-1 bg-slate-100 dark:bg-slate-900 rounded-2xl mb-8">
             {(['email', 'phone', 'anonymous'] as const).map((m) => (
               <button
                 key={m}
@@ -272,10 +278,10 @@ export default function Login() {
                   setAuthMode(m);
                   setError('');
                 }}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+                className={`flex-1 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${
                   authMode === m 
-                    ? 'bg-white text-slate-900 shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                 }`}
               >
                 {m}
@@ -289,7 +295,7 @@ export default function Login() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-3 text-rose-600"
+                className="mb-6 p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/30 rounded-2xl flex items-start gap-3 text-rose-600 dark:text-rose-400"
               >
                 <AlertCircle size={20} className="shrink-0 mt-0.5" />
                 <p className="text-sm font-medium">{error}</p>
@@ -299,170 +305,180 @@ export default function Login() {
 
           {/* Forms */}
           <div className="space-y-6">
-            {authMode === 'email' && (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {!isLogin && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-                    <div className="relative group">
-                      <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
-                      <input 
-                        type="text"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="John Doe"
-                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium"
-                        required
-                      />
-                    </div>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-                  <div className="relative group">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
-                    <input 
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
-                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center ml-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Password</label>
-                    {isLogin && (
-                      <button type="button" className="text-[10px] font-bold text-sky-600 uppercase tracking-widest hover:underline">Forgot?</button>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={authMode + (isLogin ? 'login' : 'signup')}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {authMode === 'email' && (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {!isLogin && (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Full Name</label>
+                        <div className="relative group">
+                          <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
+                          <input 
+                            type="text"
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value)}
+                            placeholder="John Doe"
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium dark:text-white"
+                            required
+                          />
+                        </div>
+                      </div>
                     )}
-                  </div>
-                  <div className="relative group">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
-                    <input 
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium"
-                      required
-                    />
-                  </div>
-                </div>
-                <button 
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-slate-900/20"
-                >
-                  {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
-                    <>
-                      {isLogin ? 'Sign In' : 'Create Account'}
-                      <ArrowRight size={20} />
-                    </>
-                  )}
-                </button>
-              </form>
-            )}
-
-            {authMode === 'phone' && (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {!confirmationResult ? (
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
-                    <div className="relative group">
-                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
-                      <input 
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="+62 812 3456 7890"
-                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium"
-                        required
-                      />
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
+                      <div className="relative group">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
+                        <input 
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="name@example.com"
+                          className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium dark:text-white"
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Verification Code</label>
-                    <input 
-                      type="text"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value)}
-                      placeholder="123456"
-                      className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium text-center text-2xl tracking-[0.5em]"
-                      required
-                    />
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center ml-1">
+                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Password</label>
+                        {isLogin && (
+                          <button type="button" className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest hover:underline">Forgot?</button>
+                        )}
+                      </div>
+                      <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
+                        <input 
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium dark:text-white"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <button 
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-bold text-lg hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-slate-900/20 dark:shadow-none"
+                    >
+                      {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
+                        <>
+                          {isLogin ? 'Sign In' : 'Create Account'}
+                          <ArrowRight size={20} />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
+
+                {authMode === 'phone' && (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {!confirmationResult ? (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Phone Number</label>
+                        <div className="relative group">
+                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
+                          <input 
+                            type="tel"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            placeholder="+62 812 3456 7890"
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium dark:text-white"
+                            required
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Verification Code</label>
+                        <input 
+                          type="text"
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value)}
+                          placeholder="123456"
+                          className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium text-center text-2xl tracking-[0.5em] dark:text-white"
+                          required
+                        />
+                      </div>
+                    )}
+                    
+                    <div id="recaptcha-container" className="flex justify-center"></div>
+
+                    <button 
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-bold text-lg hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-slate-900/20 dark:shadow-none"
+                    >
+                      {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
+                        <>
+                          {!confirmationResult ? 'Send Code' : 'Verify & Sign In'}
+                          <ArrowRight size={20} />
+                        </>
+                      )}
+                    </button>
+
+                    {confirmationResult && (
+                      <button 
+                        type="button"
+                        onClick={() => { setConfirmationResult(null); setVerificationCode(''); }}
+                        className="w-full text-slate-500 dark:text-slate-400 text-[10px] font-bold hover:text-slate-900 dark:hover:text-white transition-colors uppercase tracking-widest"
+                      >
+                        Change Phone Number
+                      </button>
+                    )}
+                  </form>
+                )}
+
+                {authMode === 'anonymous' && (
+                  <div className="space-y-6">
+                    <div className="p-6 bg-sky-50 dark:bg-sky-900/20 border border-sky-100 dark:border-sky-900/30 rounded-3xl">
+                      <div className="flex items-center gap-3 text-sky-600 dark:text-sky-400 mb-3">
+                        <ShieldCheck size={24} />
+                        <h3 className="font-bold">Guest Access</h3>
+                      </div>
+                      <p className="text-sm text-sky-700 dark:text-sky-300 leading-relaxed font-medium">
+                        Try GiliHub without an account. You can browse the map and see public events, but some features like booking and forum posting will be limited.
+                      </p>
+                    </div>
+                    <button 
+                      onClick={handleAnonymousSignIn}
+                      disabled={isLoading}
+                      className="w-full py-4 bg-sky-600 text-white rounded-2xl font-bold text-lg hover:bg-sky-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-sky-600/20"
+                    >
+                      {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
+                        <>
+                          Continue as Guest
+                          <ArrowRight size={20} />
+                        </>
+                      )}
+                    </button>
                   </div>
                 )}
-                
-                <div id="recaptcha-container" className="flex justify-center"></div>
-
-                <button 
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-slate-900/20"
-                >
-                  {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
-                    <>
-                      {!confirmationResult ? 'Send Code' : 'Verify & Sign In'}
-                      <ArrowRight size={20} />
-                    </>
-                  )}
-                </button>
-
-                {confirmationResult && (
-                  <button 
-                    type="button"
-                    onClick={() => { setConfirmationResult(null); setVerificationCode(''); }}
-                    className="w-full text-slate-500 text-xs font-bold hover:text-slate-900 transition-colors uppercase tracking-widest"
-                  >
-                    Change Phone Number
-                  </button>
-                )}
-              </form>
-            )}
-
-            {authMode === 'anonymous' && (
-              <div className="space-y-6">
-                <div className="p-6 bg-sky-50 border border-sky-100 rounded-3xl">
-                  <div className="flex items-center gap-3 text-sky-600 mb-3">
-                    <ShieldCheck size={24} />
-                    <h3 className="font-bold">Guest Access</h3>
-                  </div>
-                  <p className="text-sm text-sky-700 leading-relaxed font-medium">
-                    Try GiliHub without an account. You can browse the map and see public events, but some features like booking and forum posting will be limited.
-                  </p>
-                </div>
-                <button 
-                  onClick={handleAnonymousSignIn}
-                  disabled={isLoading}
-                  className="w-full py-4 bg-sky-600 text-white rounded-2xl font-bold text-lg hover:bg-sky-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-sky-600/20"
-                >
-                  {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
-                    <>
-                      Continue as Guest
-                      <ArrowRight size={20} />
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
+              </motion.div>
+            </AnimatePresence>
 
             {/* Social Login */}
             <div className="relative py-4">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-100"></div>
+                <div className="w-full border-t border-slate-100 dark:border-slate-800"></div>
               </div>
-              <div className="relative flex justify-center text-xs font-bold uppercase tracking-widest">
-                <span className="bg-white px-4 text-slate-400">Or continue with</span>
+              <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
+                <span className="bg-white dark:bg-slate-950 px-4 text-slate-400 dark:text-slate-500">Or continue with</span>
               </div>
             </div>
 
             <button 
               onClick={handleGoogleSignIn}
               disabled={isLoading}
-              className="w-full py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold hover:bg-slate-50 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+              className="w-full py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
             >
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
               Sign in with Google
