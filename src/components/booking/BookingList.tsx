@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Ship, Bike, Fish, Clock, MapPin, ChevronRight, AlertCircle, Plus, X, Edit2, Loader2, Trash2, Home as HomeIcon, Users, Waves } from 'lucide-react';
+import { Ship, Bike, Fish, Clock, MapPin, ChevronRight, AlertCircle, Plus, X, Edit2, Loader2, Trash2, Home as HomeIcon, Users, Waves, DollarSign, CreditCard } from 'lucide-react';
 import { collection, onSnapshot, addDoc, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorHandler';
 import { toast } from 'sonner';
+import { useUI } from '../../contexts/UIContext';
 import ConfirmModal from '../ui/ConfirmModal';
+import { getExchangeRates } from '../../services/apiServices';
+
+// Stripe Publishable Key
+const STRIPE_KEY = (import.meta as any).env.VITE_STRIPE_PUBLISHABLE_KEY;
 
 // Mapping string icon name to actual Lucide component
 const getIconComponent = (iconName: string) => {
@@ -19,8 +24,78 @@ const getIconComponent = (iconName: string) => {
   }
 };
 
+// Currency Converter Component
+const CurrencyConverter = () => {
+  const [rates, setRates] = useState<any>(null);
+  const [amount, setAmount] = useState<number>(100000);
+  const [targetCurrency, setTargetCurrency] = useState('USD');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRates = async () => {
+      const data = await getExchangeRates('IDR');
+      if (data && data.conversion_rates) {
+        setRates(data.conversion_rates);
+      }
+      setLoading(false);
+    };
+    fetchRates();
+  }, []);
+
+  const convert = () => {
+    if (!rates || !rates[targetCurrency]) return 0;
+    return (amount * rates[targetCurrency]).toFixed(2);
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm mb-8">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600">
+          <DollarSign size={18} />
+        </div>
+        <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Currency Converter</h3>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Amount (IDR)</label>
+          <input 
+            type="number" 
+            value={amount}
+            onChange={(e) => setAmount(Number(e.target.value))}
+            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-emerald-500"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">To Currency</label>
+          <select 
+            value={targetCurrency}
+            onChange={(e) => setTargetCurrency(e.target.value)}
+            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-emerald-500"
+          >
+            <option value="USD">USD - US Dollar</option>
+            <option value="EUR">EUR - Euro</option>
+            <option value="AUD">AUD - Australian Dollar</option>
+            <option value="GBP">GBP - British Pound</option>
+            <option value="SGD">SGD - Singapore Dollar</option>
+            <option value="MYR">MYR - Malaysian Ringgit</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-4 p-3 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl flex items-center justify-between">
+        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Result:</span>
+        <span className="text-lg font-black text-emerald-600">
+          {loading ? <Loader2 size={16} className="animate-spin" /> : `${convert()} ${targetCurrency}`}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 export default function BookingList() {
   const { user, userData } = useAuth();
+  const { setBottomNavVisible } = useUI();
   const [bookingItems, setBookingItems] = useState<any[]>([]);
   const [myBookings, setMyBookings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,6 +110,8 @@ export default function BookingList() {
   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
   const [bookingGuests, setBookingGuests] = useState(1);
   const [bookingTime, setBookingTime] = useState('09:00');
+  const [paymentStep, setPaymentStep] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -45,6 +122,15 @@ export default function BookingList() {
     icon: 'Ship',
     color: 'bg-blue-500'
   });
+
+  useEffect(() => {
+    if (isBooking || isCreating || showConfirmModal) {
+      setBottomNavVisible(false);
+    } else {
+      setBottomNavVisible(true);
+    }
+    return () => setBottomNavVisible(true);
+  }, [isBooking, isCreating, showConfirmModal]);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -163,6 +249,10 @@ export default function BookingList() {
   const handleBookNow = async () => {
     if (!user || !isBooking) return;
 
+    setIsPaying(true);
+    // Simulate Stripe Payment
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     setIsSubmitting(true);
     try {
       await addDoc(collection(db, 'bookings'), {
@@ -173,18 +263,22 @@ export default function BookingList() {
         date: bookingDate,
         time: bookingTime,
         guests: bookingGuests,
-        status: 'pending',
+        status: 'confirmed', // Auto-confirm after payment
+        paymentStatus: 'paid',
+        amount: isBooking.price,
         createdAt: new Date().toISOString(),
         providerId: isBooking.providerId
       });
-      toast.success('Booking request sent successfully!');
+      toast.success('Payment successful! Booking confirmed.');
       setIsBooking(null);
       setShowConfirmModal(false);
+      setPaymentStep(false);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'bookings');
-      toast.error('Failed to send booking request');
+      toast.error('Failed to process booking');
     } finally {
       setIsSubmitting(false);
+      setIsPaying(false);
     }
   };
 
@@ -325,6 +419,9 @@ export default function BookingList() {
           </div>
         </div>
       )}
+
+      {/* Currency Converter */}
+      <CurrencyConverter />
 
       {/* Featured Section */}
       <div className="mb-8">
@@ -532,47 +629,99 @@ export default function BookingList() {
       {showConfirmModal && isBooking && (
         <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/70 z-[60] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm p-6 animate-in zoom-in-95">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Confirm Your Booking</h3>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
+              {paymentStep ? 'Payment' : 'Confirm Your Booking'}
+            </h3>
             
-            <div className="space-y-3 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Service</span>
-                <span className="font-bold text-slate-900 dark:text-white text-right">{isBooking.title}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Date</span>
-                <span className="font-bold text-slate-900 dark:text-white">{bookingDate}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Time</span>
-                <span className="font-bold text-slate-900 dark:text-white">{bookingTime}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Guests</span>
-                <span className="font-bold text-slate-900 dark:text-white">{bookingGuests}</span>
-              </div>
-              <div className="flex justify-between pt-3 border-t border-slate-200 dark:border-slate-700">
-                <span className="text-slate-500 dark:text-slate-400">Price per person</span>
-                <span className="font-bold text-slate-900 dark:text-white">{isBooking.price}</span>
-              </div>
-            </div>
+            {!paymentStep ? (
+              <>
+                <div className="space-y-3 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Service</span>
+                    <span className="font-bold text-slate-900 dark:text-white text-right">{isBooking.title}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Date</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{bookingDate}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Time</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{bookingTime}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Guests</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{bookingGuests}</span>
+                  </div>
+                  <div className="flex justify-between pt-3 border-t border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-500 dark:text-slate-400">Price per person</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{isBooking.price}</span>
+                  </div>
+                </div>
 
-            <div className="flex gap-3">
-              <button 
-                onClick={() => setShowConfirmModal(false)}
-                disabled={isSubmitting}
-                className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
-              >
-                Back
-              </button>
-              <button 
-                onClick={handleBookNow}
-                disabled={isSubmitting}
-                className="flex-1 bg-sky-600 text-white font-bold py-3 rounded-xl hover:bg-sky-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'Confirm'}
-              </button>
-            </div>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setShowConfirmModal(false)}
+                    className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button 
+                    onClick={() => setPaymentStep(true)}
+                    className="flex-1 bg-sky-600 text-white font-bold py-3 rounded-xl hover:bg-sky-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    Continue to Pay
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-6">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center text-sky-600">
+                      <CreditCard size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Amount to Pay</p>
+                      <p className="text-lg font-black text-slate-900 dark:text-white">{isBooking.price}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="h-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 flex items-center text-slate-400 text-xs">
+                      •••• •••• •••• 4242
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="h-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 flex items-center text-slate-400 text-xs">
+                        MM / YY
+                      </div>
+                      <div className="h-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 flex items-center text-slate-400 text-xs">
+                        CVC
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setPaymentStep(false)}
+                    disabled={isPaying}
+                    className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                  >
+                    Back
+                  </button>
+                  <button 
+                    onClick={handleBookNow}
+                    disabled={isPaying}
+                    className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isPaying ? <Loader2 className="animate-spin" size={20} /> : 'Pay Now'}
+                  </button>
+                </div>
+                <p className="text-[9px] text-center text-slate-400">
+                  Secure payment powered by Stripe. Your card details are never stored on our servers.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,9 +1,179 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { Map, Calendar, MessageSquare, User, LayoutGrid, MessageCircle, ChevronRight, Cloud, Sun, Thermometer, Droplets, Wind, Clock, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Map, 
+  Calendar, 
+  MessageSquare, 
+  User, 
+  LayoutGrid, 
+  MessageCircle, 
+  ChevronRight, 
+  Cloud, 
+  Sun, 
+  Thermometer, 
+  Droplets, 
+  Wind, 
+  Clock, 
+  MapPin,
+  Waves,
+  RefreshCw,
+  Loader2,
+  CloudRain,
+  Image as ImageIcon,
+  Play,
+  ArrowRight
+} from 'lucide-react';
 
 import { collection, query, onSnapshot, where, limit } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { getWeatherData, getTideData, getIslandImages, fetchYouTubeVideos } from '../../services/apiServices';
+import { useUI } from '../../contexts/UIContext';
+
+// Island Gallery Component
+const IslandGallery = () => {
+  const [images, setImages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { showImageViewer } = useUI();
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      const data = await getIslandImages('Gili Trawangan', 6);
+      if (data) {
+        setImages(data);
+      }
+      setLoading(false);
+    };
+    fetchImages();
+  }, []);
+
+  if (loading && images.length === 0) {
+    return (
+      <div className="mb-10 flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="min-w-[200px] h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-10">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+          <ImageIcon size={20} className="text-rose-500" />
+          Island Views
+        </h3>
+      </div>
+      <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+        {images.map((img, index) => (
+          <motion.div 
+            key={img.id}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.1 }}
+            className="min-w-[240px] h-40 rounded-3xl overflow-hidden relative group shadow-sm cursor-pointer"
+            onClick={() => showImageViewer(img.urls.regular)}
+          >
+            <img 
+              src={img.urls.small} 
+              alt={img.alt_description} 
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+              <p className="text-[10px] text-white font-medium truncate">by {img.user.name}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// YouTube Gallery Component
+const YouTubeGallery = () => {
+  const [videos, setVideos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const getVideos = async () => {
+      const data = await fetchYouTubeVideos();
+      setVideos(data);
+      setLoading(false);
+    };
+    getVideos();
+  }, []);
+
+  if (loading) return (
+    <div className="h-48 flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
+
+  if (videos.length === 0) return null;
+
+  return (
+    <div className="mt-12 px-6">
+      <div className="flex justify-between items-end mb-6">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Island Videos</h2>
+          <p className="text-sm text-slate-500 font-medium">Experience Gili through video</p>
+        </div>
+        <a 
+          href="https://www.youtube.com/results?search_query=Gili+Trawangan" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-sky-600 font-bold text-xs uppercase tracking-widest flex items-center gap-1 hover:gap-2 transition-all"
+        >
+          Watch More <ArrowRight size={14} />
+        </a>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {videos.map((video, index) => (
+          <motion.div
+            key={video.id.videoId}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            viewport={{ once: true }}
+            className="group relative bg-white rounded-2xl overflow-hidden shadow-md border border-slate-100"
+          >
+            <div className="aspect-video relative overflow-hidden">
+              <img 
+                src={video.snippet.thumbnails.high.url} 
+                alt={video.snippet.title}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center text-sky-600 shadow-xl group-hover:scale-110 transition-transform">
+                  <Play size={20} fill="currentColor" />
+                </div>
+              </div>
+            </div>
+            <div className="p-4">
+              <h3 className="text-sm font-bold text-slate-900 line-clamp-2 mb-1 group-hover:text-sky-600 transition-colors">
+                {video.snippet.title}
+              </h3>
+              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                {video.snippet.channelTitle}
+              </p>
+              <a 
+                href={`https://www.youtube.com/watch?v=${video.id.videoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute inset-0 z-10"
+              >
+                <span className="sr-only">Watch video</span>
+              </a>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 interface HomeProps {
   setActiveTab: (tab: 'home' | 'map' | 'booking' | 'events' | 'forum' | 'chat' | 'profile') => void;
@@ -63,20 +233,79 @@ function TodayEvents() {
 }
 
 function WeatherWidget() {
+  const [weather, setWeather] = useState<any>(null);
+  const [tide, setTide] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [weatherData, tideData] = await Promise.all([
+        getWeatherData(),
+        getTideData()
+      ]);
+      
+      if (weatherData) setWeather(weatherData);
+      if (tideData) setTide(tideData);
+    } catch (err) {
+      setError('Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllData();
+    const interval = setInterval(fetchAllData, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getWeatherIcon = (code: string) => {
+    if (code.includes('01')) return <Sun className="text-amber-300" size={32} />;
+    if (code.includes('02') || code.includes('03') || code.includes('04')) return <Cloud className="text-sky-200" size={32} />;
+    if (code.includes('09') || code.includes('10')) return <CloudRain className="text-sky-100" size={32} />;
+    return <Sun className="text-amber-300" size={32} />;
+  };
+
+  if (loading && !weather) {
+    return (
+      <div className="bg-gradient-to-br from-sky-400 to-sky-600 rounded-3xl p-6 text-white shadow-xl shadow-sky-500/20 mb-10 flex items-center justify-center h-48">
+        <Loader2 className="animate-spin text-white/50" size={32} />
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-gradient-to-br from-sky-400 to-sky-600 rounded-3xl p-6 text-white shadow-xl shadow-sky-500/20 mb-10 relative overflow-hidden">
-      <div className="absolute -right-4 -top-4 opacity-20">
+    <div className="bg-gradient-to-br from-sky-400 to-sky-600 rounded-3xl p-6 text-white shadow-xl shadow-sky-500/20 mb-10 relative overflow-hidden group">
+      <div className="absolute -right-4 -top-4 opacity-20 group-hover:scale-110 transition-transform duration-700">
         <Sun size={120} />
       </div>
+      
       <div className="relative z-10">
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h3 className="text-sky-100 font-bold text-xs uppercase tracking-widest mb-1">Current Weather</h3>
-            <div className="flex items-center gap-2">
-              <Sun className="text-amber-300" size={32} />
-              <span className="text-4xl font-black">29°C</span>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-sky-100 font-bold text-xs uppercase tracking-widest">Island Weather</h3>
+              <button 
+                onClick={fetchAllData}
+                className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+              </button>
             </div>
-            <p className="text-sky-100 text-sm font-medium mt-1">Sunny & Clear Sky</p>
+            {weather ? (
+              <>
+                <div className="flex items-center gap-3">
+                  {getWeatherIcon(weather.weather[0].icon)}
+                  <span className="text-4xl font-black">{Math.round(weather.main.temp)}°C</span>
+                </div>
+                <p className="text-sky-100 text-sm font-medium mt-1 capitalize">{weather.weather[0].description}</p>
+              </>
+            ) : (
+              <p className="text-sky-100 text-xs italic">Weather data unavailable</p>
+            )}
           </div>
           <div className="text-right">
             <p className="text-sky-100 font-bold text-sm">Gili Trawangan</p>
@@ -90,23 +319,42 @@ function WeatherWidget() {
               <Droplets size={14} />
               <span className="text-[10px] font-bold uppercase tracking-wider">Humidity</span>
             </div>
-            <p className="text-sm font-black">78%</p>
+            <p className="text-sm font-black">{weather?.main?.humidity || '--'}%</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1.5 text-sky-100 mb-1">
               <Wind size={14} />
               <span className="text-[10px] font-bold uppercase tracking-wider">Wind</span>
             </div>
-            <p className="text-sm font-black">12 km/h</p>
+            <p className="text-sm font-black">{weather ? Math.round(weather.wind.speed * 3.6) : '--'} km/h</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1.5 text-sky-100 mb-1">
               <Thermometer size={14} />
               <span className="text-[10px] font-bold uppercase tracking-wider">Feels Like</span>
             </div>
-            <p className="text-sm font-black">32°C</p>
+            <p className="text-sm font-black">{weather ? Math.round(weather.main.feels_like) : '--'}°C</p>
           </div>
         </div>
+
+        {tide && tide.extremes && (
+          <div className="mt-6 pt-4 border-t border-white/10">
+            <div className="flex items-center gap-2 mb-2">
+              <Waves size={12} className="text-sky-200" />
+              <span className="text-[9px] font-bold text-sky-100 uppercase tracking-widest">Tide Extremes</span>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-1 no-scrollbar">
+              {tide.extremes.slice(0, 3).map((ext: any, i: number) => (
+                <div key={i} className="flex flex-col min-w-[70px]">
+                  <span className="text-[8px] font-bold text-sky-200 uppercase">{ext.type}</span>
+                  <span className="text-[11px] font-black">
+                    {new Date(ext.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -215,6 +463,8 @@ export default function Home({ setActiveTab }: HomeProps) {
       </div>
 
       <WeatherWidget />
+
+      <IslandGallery />
 
       <TodayEvents />
 
@@ -387,6 +637,8 @@ export default function Home({ setActiveTab }: HomeProps) {
           </div>
         </div>
       </div>
+
+      <YouTubeGallery />
     </div>
   );
 }

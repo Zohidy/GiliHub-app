@@ -11,6 +11,7 @@ import ProfileSetup from './components/auth/ProfileSetup';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ProfileModalProvider } from './contexts/ProfileModalContext';
+import { UIProvider, useUI } from './contexts/UIContext';
 import PublicProfileModal from './components/profile/PublicProfileModal';
 import GiliBot from './components/chat/GiliBot';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -22,6 +23,7 @@ import { Toaster } from 'sonner';
 function MainApp() {
   const { user, userData, loading, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { isBottomNavVisible } = useUI();
   const [activeTab, setActiveTab] = useState<'home' | 'map' | 'booking' | 'events' | 'forum' | 'chat' | 'profile'>('home');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
@@ -148,44 +150,54 @@ function MainApp() {
       </main>
 
       {/* Bottom Navigation Bar */}
-      <nav className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-6 py-3 pb-8 sm:pb-3 flex justify-around items-center sticky bottom-0 z-20 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-none">
-        <NavButton 
-          active={activeTab === 'home'} 
-          onClick={() => setActiveTab('home')} 
-          icon={<HomeIcon size={20} />} 
-          label="Home" 
-        />
-        <NavButton 
-          active={activeTab === 'map'} 
-          onClick={() => setActiveTab('map')} 
-          icon={<MapIcon size={20} />} 
-          label="Map" 
-        />
-        <NavButton 
-          active={activeTab === 'booking'} 
-          onClick={() => setActiveTab('booking')} 
-          icon={<LayoutGrid size={20} />} 
-          label="Booking" 
-        />
-        <NavButton 
-          active={activeTab === 'events'} 
-          onClick={() => setActiveTab('events')} 
-          icon={<CalendarDays size={20} />} 
-          label="Events" 
-        />
-        <NavButton 
-          active={activeTab === 'forum'} 
-          onClick={() => setActiveTab('forum')} 
-          icon={<MessageSquare size={20} />} 
-          label="Forum" 
-        />
-        <NavButton 
-          active={activeTab === 'chat'} 
-          onClick={() => setActiveTab('chat')} 
-          icon={<MessageCircle size={20} />} 
-          label="Chat" 
-        />
-      </nav>
+      <AnimatePresence>
+        {isBottomNavVisible && (
+          <motion.nav 
+            initial={{ y: 100 }}
+            animate={{ y: 0 }}
+            exit={{ y: 100 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-6 py-3 pb-8 sm:pb-3 flex justify-around items-center sticky bottom-0 z-20 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-none"
+          >
+            <NavButton 
+              active={activeTab === 'home'} 
+              onClick={() => setActiveTab('home')} 
+              icon={<HomeIcon size={20} />} 
+              label="Home" 
+            />
+            <NavButton 
+              active={activeTab === 'map'} 
+              onClick={() => setActiveTab('map')} 
+              icon={<MapIcon size={20} />} 
+              label="Map" 
+            />
+            <NavButton 
+              active={activeTab === 'booking'} 
+              onClick={() => setActiveTab('booking')} 
+              icon={<LayoutGrid size={20} />} 
+              label="Booking" 
+            />
+            <NavButton 
+              active={activeTab === 'events'} 
+              onClick={() => setActiveTab('events')} 
+              icon={<CalendarDays size={20} />} 
+              label="Events" 
+            />
+            <NavButton 
+              active={activeTab === 'forum'} 
+              onClick={() => setActiveTab('forum')} 
+              icon={<MessageSquare size={20} />} 
+              label="Forum" 
+            />
+            <NavButton 
+              active={activeTab === 'chat'} 
+              onClick={() => setActiveTab('chat')} 
+              icon={<MessageCircle size={20} />} 
+              label="Chat" 
+            />
+          </motion.nav>
+        )}
+      </AnimatePresence>
       <GiliBot />
     </div>
   );
@@ -228,11 +240,13 @@ export default function App() {
     <ErrorBoundary>
       <AuthProvider>
         <ThemeProvider>
-          <ProfileModalProvider>
-            <MainApp />
-            <PublicProfileModal />
-            <Toaster position="top-center" richColors />
-          </ProfileModalProvider>
+          <UIProvider>
+            <ProfileModalProvider>
+              <MainApp />
+              <PublicProfileModal />
+              <Toaster position="top-center" richColors />
+            </ProfileModalProvider>
+          </UIProvider>
         </ThemeProvider>
       </AuthProvider>
     </ErrorBoundary>

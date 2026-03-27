@@ -45,7 +45,15 @@ export default function GiliBot() {
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY;
+      
+      if (!apiKey) {
+        setMessages(prev => [...prev, { role: 'bot', text: "I'm sorry, my AI brain isn't fully connected yet. Please make sure the GEMINI_API_KEY is set in the environment! 🏝️" }]);
+        setIsLoading(false);
+        return;
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       
       if (!chatRef.current) {
         chatRef.current = ai.chats.create({

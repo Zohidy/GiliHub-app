@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { User, Mail, Shield, Calendar, LogOut, Edit2, Check, X, Loader2, AlertTriangle, Link as LinkIcon, Settings, Moon, Sun, Bell, Globe, ChevronRight, Download, CircleDollarSign, Ruler, BadgeCheck, Plus, Trash2, Twitter, Instagram, Facebook, Linkedin, Github } from 'lucide-react';
+import { User, Mail, Shield, Calendar, LogOut, Edit2, Check, X, Loader2, AlertTriangle, Link as LinkIcon, Settings, Moon, Sun, Bell, Globe, ChevronRight, Download, CircleDollarSign, Ruler, BadgeCheck, Plus, Trash2, Twitter, Instagram, Facebook, Linkedin, Github, RefreshCw } from 'lucide-react';
 import { doc, updateDoc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorHandler';
@@ -93,16 +93,20 @@ export default function UserProfile() {
       const userRef = doc(db, 'users', userData.uid);
       const publicRef = doc(db, 'users_public', userData.uid);
       
+      // If photoURL is empty, use Dicebear as default
+      const finalPhotoURL = editPhotoURL || `https://api.dicebear.com/7.x/lorelei/svg?seed=${trimmedName}`;
+      
       const updates = { 
         displayName: trimmedName,
-        photoURL: editPhotoURL || null,
+        photoURL: finalPhotoURL,
         bio: trimmedBio || '',
         interests: interestsArray,
-        socialLinks: socialLinksObj
+        socialLinks: socialLinksObj,
+        updatedAt: new Date().toISOString()
       };
 
-      await updateDoc(userRef, updates);
-      await updateDoc(publicRef, updates);
+      await setDoc(userRef, updates, { merge: true });
+      await setDoc(publicRef, updates, { merge: true });
       
       setIsEditing(false);
       toast.success('Profile updated successfully');
@@ -112,6 +116,15 @@ export default function UserProfile() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const generateDicebearAvatar = () => {
+    const seed = editName.trim() || userData.displayName;
+    const styles = ['lorelei', 'avataaars', 'bottts', 'adventurer', 'open-peeps', 'pixel-art', 'notionists', 'rings'];
+    const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+    const newAvatar = `https://api.dicebear.com/7.x/${randomStyle}/svg?seed=${seed}-${Date.now()}`;
+    setEditPhotoURL(newAvatar);
+    toast.success('New avatar generated!');
   };
 
   const handleResendVerification = async () => {
@@ -187,11 +200,22 @@ export default function UserProfile() {
         {/* Profile Card - Spans 2 columns */}
         <div className="md:col-span-2 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 flex flex-col gap-4">
           <div className="flex justify-between items-start">
-            <div className="w-20 h-20 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex items-center justify-center shadow-md">
-              {userData.photoURL ? (
-                <img src={userData.photoURL} alt={userData.displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-              ) : (
-                <User size={40} className="text-slate-400 dark:text-slate-500" />
+            <div className="relative group">
+              <div className="w-20 h-20 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex items-center justify-center shadow-md">
+                {(isEditing ? editPhotoURL : userData.photoURL) ? (
+                  <img src={isEditing ? editPhotoURL : userData.photoURL} alt={userData.displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <User size={40} className="text-slate-400 dark:text-slate-500" />
+                )}
+              </div>
+              {isEditing && (
+                <button 
+                  onClick={generateDicebearAvatar}
+                  className="absolute -bottom-1 -right-1 p-1.5 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 transition-all"
+                  title="Generate Random Avatar"
+                >
+                  <RefreshCw size={14} className={isSubmitting ? 'animate-spin' : ''} />
+                </button>
               )}
             </div>
             <button 

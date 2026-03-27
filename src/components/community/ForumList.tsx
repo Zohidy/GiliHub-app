@@ -13,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useProfileModal } from '../../contexts/ProfileModalContext';
 import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorHandler';
 import { motion, AnimatePresence } from 'motion/react';
+import { useUI } from '../../contexts/UIContext';
 import { toast } from 'sonner';
 import ConfirmModal from '../ui/ConfirmModal';
 
@@ -44,6 +45,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 export default function ForumList() {
   const { user, userData } = useAuth();
   const { openProfile } = useProfileModal();
+  const { setBottomNavVisible, showImageViewer } = useUI();
   const [threads, setThreads] = useState<any[]>([]);
   const [isLoadingThreads, setIsLoadingThreads] = useState(true);
   const [audioRooms, setAudioRooms] = useState<any[]>([]);
@@ -51,6 +53,7 @@ export default function ForumList() {
   const [isCreatingThread, setIsCreatingThread] = useState(false);
   const [newThreadTitle, setNewThreadTitle] = useState('');
   const [newThreadContent, setNewThreadContent] = useState('');
+  const [newThreadImageUrl, setNewThreadImageUrl] = useState('');
   const [newThreadCategory, setNewThreadCategory] = useState('general');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sortBy, setSortBy] = useState<'recent' | 'replies' | 'likes'>('recent');
@@ -77,6 +80,15 @@ export default function ForumList() {
 
   // Audio Room State
   const [joinedRoom, setJoinedRoom] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (isCreatingThread || selectedThread || joinedRoom) {
+      setBottomNavVisible(false);
+    } else {
+      setBottomNavVisible(true);
+    }
+    return () => setBottomNavVisible(true);
+  }, [isCreatingThread, selectedThread, joinedRoom]);
 
   useEffect(() => {
     const threadsQuery = query(collection(db, 'threads'), orderBy('createdAt', 'desc'));
@@ -150,6 +162,7 @@ export default function ForumList() {
       await addDoc(collection(db, 'threads'), {
         title: newThreadTitle,
         content: newThreadContent,
+        imageUrl: newThreadImageUrl.trim() || null,
         category: newThreadCategory,
         authorId: user.uid,
         authorName: user.displayName || 'Anonymous',
@@ -163,6 +176,7 @@ export default function ForumList() {
       setIsCreatingThread(false);
       setNewThreadTitle('');
       setNewThreadContent('');
+      setNewThreadImageUrl('');
       setNewThreadCategory('general');
       toast.success('Discussion created successfully');
     } catch (error) {
@@ -641,6 +655,25 @@ export default function ForumList() {
                     </div>
                   )}
                 </div>
+
+                {selectedThread.imageUrl && (
+                  <div 
+                    className="mb-6 rounded-3xl overflow-hidden cursor-pointer group/detailimg relative"
+                    onClick={() => showImageViewer(selectedThread.imageUrl)}
+                  >
+                    <img 
+                      src={selectedThread.imageUrl} 
+                      alt="Post content" 
+                      className="w-full h-auto max-h-[400px] object-cover group-hover/detailimg:scale-105 transition-transform duration-700"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/detailimg:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-bold border border-white/30">
+                        View Full Image
+                      </span>
+                    </div>
+                  </div>
+                )}
                 
                 <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap text-base">{selectedThread.content}</p>
 
@@ -767,10 +800,17 @@ export default function ForumList() {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">Connect with locals & travelers.</p>
         </div>
         <button 
-          onClick={() => setIsCreatingThread(true)}
-          className="bg-sky-600 text-white p-3.5 rounded-2xl shadow-xl shadow-sky-200 dark:shadow-none hover:bg-sky-700 transition-all active:scale-90"
+          onClick={() => {
+            if (!user) {
+              toast.error('Please login to create a new post');
+              return;
+            }
+            setIsCreatingThread(true);
+          }}
+          className="bg-sky-600 text-white px-5 py-3 rounded-2xl shadow-xl shadow-sky-200 dark:shadow-none hover:bg-sky-700 transition-all active:scale-90 flex items-center gap-2 font-bold text-sm"
         >
-          <Plus size={24} />
+          <Plus size={20} />
+          <span>New Post</span>
         </button>
       </div>
 
@@ -910,6 +950,29 @@ export default function ForumList() {
                 </div>
                 
                 <h4 className="font-bold text-slate-900 dark:text-white mb-2 leading-snug text-lg group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">{thread.title}</h4>
+                
+                {thread.imageUrl && (
+                  <div 
+                    className="mb-4 rounded-2xl overflow-hidden cursor-pointer group/img relative"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showImageViewer(thread.imageUrl);
+                    }}
+                  >
+                    <img 
+                      src={thread.imageUrl} 
+                      alt="Post content" 
+                      className="w-full h-48 object-cover group-hover/img:scale-105 transition-transform duration-500"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="bg-white/20 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-bold border border-white/30">
+                        View Image
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-5 line-clamp-2 leading-relaxed">{thread.content}</p>
                 
                 <div className="flex items-center justify-between">
@@ -1024,6 +1087,17 @@ export default function ForumList() {
                   />
                 </div>
                 
+                <div className="mb-6">
+                  <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Image URL (Optional)</label>
+                  <input 
+                    type="url" 
+                    value={newThreadImageUrl}
+                    onChange={(e) => setNewThreadImageUrl(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all font-medium text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+
                 <div className="mb-8">
                   <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Message</label>
                   <textarea 

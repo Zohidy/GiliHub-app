@@ -18,8 +18,8 @@ service cloud.firestore {
         (
           (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-          (request.auth.token.get('email', '') in ["zohidydy@gmail.com", "zohidin384@gmail.com"] && 
-           request.auth.token.get('email_verified', false) == true)
+          (request.auth.token.email in ["zohidydy@gmail.com", "zohidin384@gmail.com"]) ||
+          (request.auth.uid == "WyY9HFdDnqWvJ6w2QvUgW7ytQNd2")
         );
     }
 
@@ -83,11 +83,11 @@ service cloud.firestore {
     function isValidLocation() {
       let data = request.resource.data;
       return hasOnlyAllowedFields(['name', 'type', 'position', 'desc', 'createdBy']) &&
-             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.type in ["sunset", "clinic", "police", "bike", "snorkeling", "port", "restaurant"] &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.type in ["sunset", "clinic", "police", "bike", "snorkeling", "port", "restaurant", "diving"] &&
              data.position is list && data.position.size() == 2 &&
              data.position[0] is number && data.position[1] is number &&
-             data.desc is string && data.desc.size() < 500 &&
+             data.desc is string && data.desc.size() <= 500 &&
              data.createdBy is string;
     }
 
@@ -106,10 +106,10 @@ service cloud.firestore {
 
     function isValidThread() {
       let data = request.resource.data;
-      return hasOnlyAllowedFields(['title', 'content', 'category', 'authorId', 'authorName', 'authorAvatar', 'authorRole', 'repliesCount', 'likesCount', 'likedBy', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['title', 'content', 'category', 'authorId', 'authorName', 'authorAvatar', 'authorRole', 'repliesCount', 'likesCount', 'likedBy', 'createdAt', 'updatedAt', 'imageUrl']) &&
              (!('title' in data) || (data.title is string && data.title.size() > 0 && data.title.size() <= 200)) &&
              (!('content' in data) || (data.content is string && data.content.size() > 0 && data.content.size() <= 5000)) &&
-             (!('category' in data) || data.category in ["general", "tips", "food", "transport", "party", "help"]) &&
+             (!('category' in data) || data.category in ["general", "tips", "food", "transport", "party", "help", "diving", "snorkeling", "accommodation"]) &&
              (!('authorId' in data) || data.authorId is string) &&
              (!('authorName' in data) || (data.authorName is string && data.authorName.size() <= 100)) &&
              (!('authorAvatar' in data) || data.authorAvatar == null || (data.authorAvatar is string && data.authorAvatar.size() < 2000)) &&
@@ -118,7 +118,8 @@ service cloud.firestore {
              (!('likesCount' in data) || (data.likesCount is number && data.likesCount >= 0)) &&
              (!('likedBy' in data) || data.likedBy is list) &&
              (!('createdAt' in data) || data.createdAt is string) &&
-             (!('updatedAt' in data) || data.updatedAt is string);
+             (!('updatedAt' in data) || data.updatedAt is string) &&
+             (!('imageUrl' in data) || data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() < 2000));
     }
 
     function isValidAudioRoom() {
@@ -287,9 +288,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       
       // Only admins can create/update/delete locations
-      allow create: if isAdmin() && isValidLocation() && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isAdmin() && isValidLocation() && request.resource.data.createdBy == resource.data.createdBy;
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     match /bookingItems/{itemId} {

@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../config/firebase';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { motion } from 'motion/react';
-import { User, Globe, MapPin, Heart, ArrowRight, Loader2, Camera } from 'lucide-react';
+import { User, Globe, MapPin, Heart, ArrowRight, Loader2, Camera, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ProfileSetup() {
@@ -11,6 +11,7 @@ export default function ProfileSetup() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     displayName: userData?.displayName || '',
+    photoURL: userData?.photoURL || '',
     country: '',
     gender: '',
     bio: '',
@@ -34,18 +35,23 @@ export default function ProfileSetup() {
       const userRef = doc(db, 'users', user.uid);
       const publicUserRef = doc(db, 'users_public', user.uid);
 
+      const avatarUrl = formData.photoURL || userData?.photoURL || `https://api.dicebear.com/7.x/lorelei/svg?seed=${formData.displayName || 'Guest'}`;
+
       const updateData = {
         ...formData,
+        photoURL: avatarUrl,
         profileSetupCompleted: true,
         updatedAt: new Date().toISOString()
       };
 
-      await updateDoc(userRef, updateData);
-      await updateDoc(publicUserRef, {
+      await setDoc(userRef, updateData, { merge: true });
+      await setDoc(publicUserRef, {
         displayName: formData.displayName,
+        photoURL: avatarUrl,
         bio: formData.bio,
-        profileSetupCompleted: true
-      });
+        profileSetupCompleted: true,
+        updatedAt: updateData.updatedAt
+      }, { merge: true });
 
       toast.success('Profile setup completed!');
       // The AuthContext will pick up the changes via its effect if we were using onSnapshot, 
@@ -97,6 +103,35 @@ export default function ProfileSetup() {
 
           {/* Right Side: Form */}
           <div className="md:w-2/3 p-8 md:p-12">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="relative group">
+                <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center shadow-inner border border-slate-200 dark:border-slate-700">
+                  <img 
+                    src={formData.photoURL || `https://api.dicebear.com/7.x/lorelei/svg?seed=${formData.displayName || 'Guest'}`} 
+                    alt="Avatar Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    const styles = ['lorelei', 'avataaars', 'bottts', 'adventurer', 'open-peeps', 'pixel-art', 'notionists', 'rings'];
+                    const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+                    const newAvatar = `https://api.dicebear.com/7.x/${randomStyle}/svg?seed=${formData.displayName || 'Guest'}-${Date.now()}`;
+                    setFormData({...formData, photoURL: newAvatar});
+                  }}
+                  className="absolute -bottom-1 -right-1 p-1 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 transition-all"
+                  title="Generate Random Avatar"
+                >
+                  <RefreshCw size={12} />
+                </button>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">Your Avatar</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Customize your look for the community</p>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 {/* Display Name */}

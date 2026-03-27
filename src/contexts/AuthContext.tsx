@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../config/firebase';
 import { GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, signInAnonymously as firebaseSignInAnonymously, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, sendEmailVerification } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { toast } from 'sonner';
 
@@ -79,9 +79,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const syncUserData = async () => {
+    const userRef = doc(db, 'users', user.uid);
+    
+    // Initial sync logic to ensure user exists and metadata is correct
+    const ensureUserExists = async () => {
       try {
-        const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
         
         if (!userSnap.exists()) {
@@ -100,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             bio: '',
             followersCount: 0,
             followingCount: 0,
-            profileSetupCompleted: false // Force profile setup for new users
+            profileSetupCompleted: false
           };
           
           const publicUserData: any = {
@@ -117,49 +119,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (user.photoURL) {
             newUserData.photoURL = user.photoURL;
             publicUserData.photoURL = user.photoURL;
+          } else {
+            // Set default Dicebear avatar
+            const avatarUrl = `https://api.dicebear.com/7.x/lorelei/svg?seed=${displayName}`;
+            newUserData.photoURL = avatarUrl;
+            publicUserData.photoURL = avatarUrl;
           }
           
           await setDoc(userRef, newUserData);
           await setDoc(doc(db, 'users_public', user.uid), publicUserData);
-          setUserData(newUserData);
         } else {
           const data = userSnap.data();
           // Auto-upgrade zohidydy@gmail.com to admin if they are not already
           if ((user.email === 'zohidydy@gmail.com' || user.email === 'zohidin384@gmail.com') && data.role !== 'admin') {
-            const updatedData = { ...data, role: 'admin' };
-            await setDoc(userRef, updatedData, { merge: true });
+            await setDoc(userRef, { role: 'admin' }, { merge: true });
             await setDoc(doc(db, 'users_public', user.uid), { role: 'admin' }, { merge: true });
-            setUserData(updatedData);
-          } else {
-            const currentData = { ...data };
-            // If profileSetupCompleted is missing, we assume old users are "completed"
-            if (currentData.profileSetupCompleted === undefined) {
-              currentData.profileSetupCompleted = true;
-              await setDoc(userRef, { profileSetupCompleted: true }, { merge: true });
-              await setDoc(doc(db, 'users_public', user.uid), { profileSetupCompleted: true }, { merge: true });
-            }
-            
-            setUserData(currentData);
-            // Ensure public profile exists/is synced
-            await setDoc(doc(db, 'users_public', user.uid), {
-              uid: currentData.uid,
-              displayName: currentData.displayName,
-              photoURL: currentData.photoURL || null,
-              role: currentData.role,
-              createdAt: currentData.createdAt,
-              bio: currentData.bio || '',
-              followersCount: currentData.followersCount || 0,
-              followingCount: currentData.followingCount || 0,
-              profileSetupCompleted: currentData.profileSetupCompleted
-            }, { merge: true });
+          }
+          
+          // Ensure profileSetupCompleted exists
+          if (data.profileSetupCompleted === undefined) {
+            await setDoc(userRef, { profileSetupCompleted: true }, { merge: true });
+            await setDoc(doc(db, 'users_public', user.uid), { profileSetupCompleted: true }, { merge: true });
           }
         }
       } catch (error) {
-        console.error("Error syncing user data to Firestore:", error);
+        console.error("Error in ensureUserExists:", error);
       }
     };
 
-    syncUserData();
+    ensureUserExists();
+
+    // Listen for real-time updates
+    const unsubscribe = onSnapshot(userRef, (doc) => {
+      if (doc.exists()) {
+        setUserData(doc.data());
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   const signInWithGoogle = async () => {
