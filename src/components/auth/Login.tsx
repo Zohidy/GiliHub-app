@@ -249,7 +249,7 @@ export default function Login() {
               transition={{ delay: 0.1 }}
             >
               <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
-                {authMode === 'anonymous' ? 'Explore as Guest.' : isLogin ? 'Welcome back.' : 'Join the island.'}
+                {authMode === 'anonymous' ? 'Welcome to GiliHub! Explore the island as a guest.' : isLogin ? 'Welcome back! Ready for more island adventures?' : 'Join the GiliHub community! Let\'s start your island adventure.'}
               </h2>
               <p className="text-slate-500 dark:text-slate-400 mt-3 font-medium">
                 {authMode === 'anonymous' 

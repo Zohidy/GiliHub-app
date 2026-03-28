@@ -6,6 +6,8 @@ interface UIContextType {
   setBottomNavVisible: (visible: boolean) => void;
   showImageViewer: (url: string) => void;
   hideImageViewer: () => void;
+  mapView: { pos: [number, number] | null; category: string | null } | null;
+  setMapView: (view: { pos: [number, number] | null; category: string | null } | null) => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -13,6 +15,7 @@ const UIContext = createContext<UIContextType | undefined>(undefined);
 export function UIProvider({ children }: { children: ReactNode }) {
   const [isBottomNavVisible, setBottomNavVisible] = useState(true);
   const [viewerImage, setViewerImage] = useState<string | null>(null);
+  const [mapView, setMapView] = useState<{ pos: [number, number] | null; category: string | null } | null>(null);
 
   const showImageViewer = (url: string) => {
     setViewerImage(url);
@@ -29,7 +32,9 @@ export function UIProvider({ children }: { children: ReactNode }) {
       isBottomNavVisible, 
       setBottomNavVisible,
       showImageViewer,
-      hideImageViewer
+      hideImageViewer,
+      mapView,
+      setMapView
     }}>
       {children}
       {viewerImage && (

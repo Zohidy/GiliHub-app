@@ -418,14 +418,14 @@ export default function Home({ setActiveTab }: HomeProps) {
     { name: 'West Coast Sunset', desc: 'Best bars for bean bag sunsets.', icon: '🌅', pos: [-8.3585, 116.0283] },
   ];
 
+  const { setMapView } = useUI();
+
   const handleViewOnMap = (pos?: number[], category?: string) => {
+    setMapView({ 
+      pos: pos ? [pos[0], pos[1]] : null, 
+      category: category || null 
+    });
     setActiveTab('map');
-    if (pos) {
-      setTimeout(() => {
-        const map = (window as any).leafletMap;
-        if (map) map.flyTo(pos, 17);
-      }, 500);
-    }
   };
 
   const foodRecommendations = [

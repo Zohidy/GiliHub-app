@@ -10,8 +10,7 @@ import { Plus, X, MapPin, Navigation, Loader2, Trash2, Database, Search, Info, S
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import ConfirmModal from '../ui/ConfirmModal';
-
-const GOOGLE_MAPS_API_KEY = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY;
+import { useUI } from '../../contexts/UIContext';
 
 // Fix untuk masalah default icon Leaflet di React
 // @ts-ignore
@@ -248,20 +247,25 @@ const IslandSearch = ({ onPlaceSelect }: { onPlaceSelect: (place: any) => void }
   );
 };
 
-// Map Controller to expose map instance
+// Map Controller to expose map instance and handle initial view
 const MapController = () => {
   const map = useMapEvents({});
+  const { mapView } = useUI();
+
   useEffect(() => {
     (window as any).leafletMap = map;
-  }, [map]);
+    
+    if (mapView?.pos) {
+      map.flyTo(mapView.pos, 17);
+    }
+  }, [map, mapView]);
+
   return null;
 };
 
-import { useUI } from '../../contexts/UIContext';
-
 export default function InteractiveMap() {
   const { user, userData } = useAuth();
-  const { setBottomNavVisible } = useUI();
+  const { setBottomNavVisible, mapView, setMapView } = useUI();
   const [locations, setLocations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingMode, setIsAddingMode] = useState(false);
@@ -290,6 +294,21 @@ export default function InteractiveMap() {
   const [showLegend, setShowLegend] = useState(false);
 
   const isAdmin = userData?.role === 'admin';
+
+  // Handle initial category from Home page
+  useEffect(() => {
+    if (mapView?.category) {
+      setFilterCategory(mapView.category);
+    }
+    
+    // Clear map view state after a delay to allow map to initialize
+    if (mapView) {
+      const timer = setTimeout(() => {
+        setMapView(null);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [mapView, setMapView]);
 
   const filteredLocations = locations.filter(loc => {
     const matchesSearch = loc.name.toLowerCase().includes(searchQuery.toLowerCase()) || 

@@ -90,7 +90,7 @@ export default function ProfileSetup() {
                 TELL US <br /> ABOUT <br /> YOU.
               </h2>
               <p className="text-electric-blue-light text-sm font-medium leading-relaxed">
-                Complete your profile to get the best experience on GiliHub and connect with other travelers.
+                Welcome to GiliHub! This quick setup helps you get started. Once you're done, you can explore the island, book experiences, and join our community.
               </p>
             </div>
             <div className="mt-8 pt-8 border-t border-white/10">
