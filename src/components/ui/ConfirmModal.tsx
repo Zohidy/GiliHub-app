@@ -28,34 +28,35 @@ export default function ConfirmModal({
       {isOpen && (
         <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-slate-200 dark:border-slate-800"
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="glass dark:glass-dark rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl border-0 relative overflow-hidden"
           >
-            <div className="flex items-center gap-3 mb-4 text-rose-600 dark:text-rose-500">
-              <div className="bg-rose-100 dark:bg-rose-900/30 p-2 rounded-full">
-                <AlertTriangle size={24} />
+            <div className="absolute top-0 left-0 w-full h-1 bg-rose-500/50" />
+            
+            <div className="flex flex-col items-center text-center mb-8">
+              <div className="bg-rose-500/10 dark:bg-rose-500/20 p-4 rounded-[1.5rem] text-rose-600 dark:text-rose-400 mb-4 shadow-inner">
+                <AlertTriangle size={32} strokeWidth={2.5} />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h3>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-tight">{title}</h3>
+              <p className="text-slate-500 dark:text-slate-400 mt-3 text-sm font-medium leading-relaxed">
+                {message}
+              </p>
             </div>
             
-            <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
-              {message}
-            </p>
-
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button 
                 onClick={onCancel}
                 disabled={isLoading}
-                className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                className="flex-1 glass-input dark:glass-input-dark text-slate-600 dark:text-slate-300 font-black py-4 rounded-2xl hover:bg-white/40 dark:hover:bg-white/10 transition-all disabled:opacity-50 uppercase tracking-widest text-[10px]"
               >
                 {cancelText}
               </button>
               <button 
                 onClick={onConfirm}
                 disabled={isLoading}
-                className="flex-1 bg-rose-600 text-white font-bold py-2.5 rounded-xl hover:bg-rose-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 bg-rose-600/90 hover:bg-rose-600 text-white font-black py-4 rounded-2xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] shadow-lg shadow-rose-600/20 active:scale-95"
               >
                 {isLoading ? <Loader2 className="animate-spin" size={18} /> : confirmText}
               </button>

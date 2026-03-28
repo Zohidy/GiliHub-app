@@ -90,10 +90,10 @@ export default function GiliBot() {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="bg-white dark:bg-slate-900 w-[320px] sm:w-[380px] h-[500px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden mb-4"
+            className="glass dark:glass-dark w-[calc(100vw-2rem)] sm:w-[380px] h-[500px] max-h-[80vh] rounded-3xl shadow-2xl border-none flex flex-col overflow-hidden mb-4"
           >
             {/* Header */}
-            <div className="bg-sky-600 p-4 flex justify-between items-center">
+            <div className="bg-electric-blue/80 backdrop-blur-md p-4 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="bg-white/20 p-2 rounded-xl">
                   <Bot className="text-white" size={20} />
@@ -102,7 +102,7 @@ export default function GiliBot() {
                   <h3 className="text-white font-bold text-sm">GiliBot</h3>
                   <div className="flex items-center gap-1">
                     <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                    <span className="text-[10px] text-sky-100 font-medium">Island Guide AI</span>
+                    <span className="text-[10px] text-white/80 font-medium">Island Guide AI</span>
                   </div>
                 </div>
               </div>
@@ -117,7 +117,7 @@ export default function GiliBot() {
             {/* Messages */}
             <div 
               ref={scrollRef}
-              className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950/50"
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-transparent"
             >
               {messages.map((msg, i) => (
                 <div 
@@ -126,8 +126,8 @@ export default function GiliBot() {
                 >
                   <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${
                     msg.role === 'user' 
-                      ? 'bg-sky-600 text-white rounded-tr-none' 
-                      : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-tl-none shadow-sm'
+                      ? 'bg-electric-blue/90 text-white rounded-tr-none shadow-lg' 
+                      : 'glass dark:glass-dark text-slate-800 dark:text-slate-200 border-none rounded-tl-none shadow-md'
                   }`}>
                     {msg.text}
                   </div>
@@ -135,8 +135,8 @@ export default function GiliBot() {
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-tl-none border border-slate-100 dark:border-slate-700 flex items-center gap-2">
-                    <Loader2 className="animate-spin text-sky-600" size={16} />
+                  <div className="glass dark:glass-dark p-3 rounded-2xl rounded-tl-none border-none flex items-center gap-2">
+                    <Loader2 className="animate-spin text-electric-blue" size={16} />
                     <span className="text-xs text-slate-500">Thinking...</span>
                   </div>
                 </div>
@@ -145,12 +145,12 @@ export default function GiliBot() {
 
             {/* Quick Questions */}
             {messages.length < 3 && (
-              <div className="px-4 py-2 flex gap-2 overflow-x-auto no-scrollbar border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <div className="px-4 py-2 flex gap-2 overflow-x-auto no-scrollbar border-t border-white/10 bg-transparent">
                 {quickQuestions.map((q, i) => (
                   <button
                     key={i}
                     onClick={() => handleSend(q)}
-                    className="whitespace-nowrap bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-sky-50 dark:hover:bg-sky-900/20 hover:text-sky-600 transition-all border border-transparent hover:border-sky-200"
+                    className="whitespace-nowrap glass-input dark:glass-input-dark text-slate-600 dark:text-slate-400 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-electric-blue/10 hover:text-electric-blue transition-all border-none"
                   >
                     {q}
                   </button>
@@ -161,19 +161,19 @@ export default function GiliBot() {
             {/* Input */}
             <form 
               onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-              className="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex gap-2"
+              className="p-4 bg-transparent border-t border-white/10 flex gap-2"
             >
               <input 
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask about Gili T..."
-                className="flex-1 bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-sky-500 transition-all dark:text-white"
+                className="flex-1 glass-input dark:glass-input-dark border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-electric-blue transition-all dark:text-white"
               />
               <button 
                 type="submit"
                 disabled={!input.trim() || isLoading}
-                className="bg-sky-600 text-white p-2 rounded-xl hover:bg-sky-700 transition-colors disabled:opacity-50"
+                className="bg-electric-blue text-white p-2 rounded-xl hover:bg-electric-blue-dark transition-colors disabled:opacity-50 shadow-lg"
               >
                 <Send size={18} />
               </button>
@@ -187,7 +187,7 @@ export default function GiliBot() {
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
         className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all ${
-          isOpen ? 'bg-rose-500 rotate-90' : 'bg-sky-600'
+          isOpen ? 'bg-rose-500 rotate-90' : 'bg-electric-blue'
         }`}
       >
         {isOpen ? <X className="text-white" size={24} /> : <Sparkles className="text-white" size={24} />}

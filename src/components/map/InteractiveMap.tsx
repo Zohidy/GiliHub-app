@@ -39,7 +39,7 @@ const ActiveIcon = L.icon({
 
 const UserIcon = L.divIcon({
   className: 'user-position-marker',
-  html: `<div class="w-4 h-4 bg-sky-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>`,
+  html: `<div class="w-4 h-4 bg-electric-blue rounded-full border-2 border-white shadow-lg animate-pulse"></div>`,
   iconSize: [16, 16],
   iconAnchor: [8, 8]
 });
@@ -50,12 +50,12 @@ const getCategoryIcon = (type: string, isActive: boolean) => {
   const colors: Record<string, string> = {
     sunset: 'bg-orange-500',
     clinic: 'bg-rose-500',
-    police: 'bg-blue-600',
+    police: 'bg-electric-blue',
     bike: 'bg-emerald-500',
-    snorkeling: 'bg-sky-400',
+    snorkeling: 'bg-electric-blue/60',
     port: 'bg-slate-700',
     restaurant: 'bg-amber-500',
-    diving: 'bg-indigo-600'
+    diving: 'bg-electric-blue'
   };
   
   const color = colors[type] || 'bg-slate-400';
@@ -114,7 +114,7 @@ function LocateControl({ onLocationFound }: { onLocationFound: (latlng: L.LatLng
     <div className="absolute top-20 left-4 z-[1000]">
       <button 
         onClick={handleLocate}
-        className="bg-white p-2.5 rounded-xl shadow-md border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center text-sky-600"
+        className="glass dark:glass-dark p-3 rounded-2xl shadow-2xl hover:bg-white/20 dark:hover:bg-slate-800/40 transition-all flex items-center justify-center text-electric-blue active:scale-95 border border-white/20"
         title="Locate Me"
       >
         <Navigation size={20} />
@@ -123,12 +123,13 @@ function LocateControl({ onLocationFound }: { onLocationFound: (latlng: L.LatLng
   );
 }
 
-// Google Places Search Component
-const GooglePlacesSearch = ({ onPlaceSelect }: { onPlaceSelect: (place: any) => void }) => {
+// Island Search Component (using Nominatim)
+const IslandSearch = ({ onPlaceSelect }: { onPlaceSelect: (place: any) => void }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -137,45 +138,75 @@ const GooglePlacesSearch = ({ onPlaceSelect }: { onPlaceSelect: (place: any) => 
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
   }, []);
 
-  const handleSearch = async (val: string) => {
-    setQuery(val);
-    if (val.length < 3 || !GOOGLE_MAPS_API_KEY) {
+  const performSearch = async (val: string) => {
+    if (val.length < 3) {
       setResults([]);
       return;
     }
 
     setLoading(true);
     try {
-      // Using Google Places Text Search via Proxy or direct if CORS allowed
-      // For this demo, we'll use a mock search if API key is missing, 
-      // but the structure is ready for the real API.
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${val}+Gili+Trawangan&key=${GOOGLE_MAPS_API_KEY}`
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val + ' Gili Trawangan')}&format=json&limit=5`
       );
       const data = await response.json();
-      if (data.results) {
-        setResults(data.results.slice(0, 5));
+      
+      if (data && data.length > 0) {
+        const mappedResults = data.map((item: any) => ({
+          place_id: item.place_id,
+          name: item.name || item.display_name.split(',')[0],
+          formatted_address: item.display_name,
+          geometry: {
+            location: {
+              lat: parseFloat(item.lat),
+              lng: parseFloat(item.lon)
+            }
+          }
+        }));
+        setResults(mappedResults);
+      } else {
+        setResults([]);
       }
     } catch (error) {
       console.error('Places search error:', error);
+      setResults([
+        { place_id: '1', name: 'Gili Trawangan Harbor', formatted_address: 'Gili Trawangan, Pemenang, North Lombok Regency, West Nusa Tenggara', rating: 4.5, geometry: { location: { lat: -8.3525, lng: 116.0383 } } },
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSearchChange = (val: string) => {
+    setQuery(val);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      performSearch(val);
+    }, 500);
+  };
+
   return (
     <div ref={searchRef} className="flex-1 relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
       <input 
         type="text"
         value={query}
-        onChange={(e) => handleSearch(e.target.value)}
+        onChange={(e) => handleSearchChange(e.target.value)}
         placeholder="Search Gili Trawangan..."
-        className="w-full bg-white/95 backdrop-blur-md border border-slate-200 text-slate-700 py-2.5 pl-10 pr-4 rounded-2xl shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm font-medium"
+        className="w-full glass dark:glass-dark text-slate-900 dark:text-white py-3.5 pl-12 pr-4 rounded-[2rem] shadow-2xl focus:outline-none focus:ring-2 focus:ring-electric-blue/50 text-sm font-black tracking-tight border border-white/20"
       />
+      
+      {loading && (
+        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+          <Loader2 className="animate-spin text-electric-blue" size={18} />
+        </div>
+      )}
       
       <AnimatePresence>
         {results.length > 0 && (
@@ -183,7 +214,7 @@ const GooglePlacesSearch = ({ onPlaceSelect }: { onPlaceSelect: (place: any) => 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-[2000]"
+            className="absolute top-full left-0 right-0 mt-3 glass dark:glass-dark rounded-[2rem] shadow-2xl overflow-hidden z-[2000] border border-white/20"
           >
             {results.map((place) => (
               <button
@@ -193,18 +224,18 @@ const GooglePlacesSearch = ({ onPlaceSelect }: { onPlaceSelect: (place: any) => 
                   setResults([]);
                   setQuery(place.name);
                 }}
-                className="w-full p-3 hover:bg-slate-50 flex items-start gap-3 border-b border-slate-50 last:border-0 text-left"
+                className="w-full p-4 hover:bg-white/10 dark:hover:bg-slate-800/40 flex items-start gap-4 border-b border-white/10 last:border-0 text-left transition-colors"
               >
-                <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600 shrink-0">
-                  <MapPin size={16} />
+                <div className="w-10 h-10 rounded-xl bg-electric-blue/10 flex items-center justify-center text-electric-blue shrink-0 border border-electric-blue/20">
+                  <MapPin size={18} />
                 </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-900">{place.name}</p>
-                  <p className="text-[10px] text-slate-500 truncate">{place.formatted_address}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-black text-slate-900 dark:text-white truncate tracking-tight">{place.name}</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate uppercase tracking-widest font-bold">{place.formatted_address}</p>
                   {place.rating && (
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <Star size={8} className="text-amber-400 fill-amber-400" />
-                      <span className="text-[8px] font-bold text-slate-400">{place.rating}</span>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Star size={10} className="text-amber-400 fill-amber-400" />
+                      <span className="text-[10px] font-black text-slate-400 dark:text-slate-500">{place.rating}</span>
                     </div>
                   )}
                 </div>
@@ -410,12 +441,12 @@ export default function InteractiveMap() {
     <div className="w-full h-full relative z-0">
       {isLoading && (
         <div className="absolute inset-0 z-[2000] bg-white/80 backdrop-blur-sm flex items-center justify-center">
-          <Loader2 className="animate-spin text-sky-600" size={48} />
+          <Loader2 className="animate-spin text-electric-blue" size={48} />
         </div>
       )}
 
       {/* Quick Jump Buttons */}
-      <div className="absolute bottom-24 left-4 right-20 z-[1000] flex gap-2 overflow-x-auto no-scrollbar pb-2">
+      <div className="absolute bottom-32 left-4 right-20 z-[1000] flex gap-2 overflow-x-auto no-scrollbar pb-2">
         {quickJumps.map((jump, i) => (
           <button
             key={i}
@@ -423,7 +454,7 @@ export default function InteractiveMap() {
               const map = (window as any).leafletMap;
               if (map) map.flyTo(jump.pos, 17);
             }}
-            className="bg-white/90 backdrop-blur-sm border border-slate-200 text-slate-700 py-2 px-4 rounded-2xl shadow-lg hover:bg-sky-50 transition-all text-[10px] font-bold uppercase tracking-wider whitespace-nowrap active:scale-95"
+            className="glass dark:glass-dark text-slate-900 dark:text-white py-3 px-5 rounded-2xl shadow-2xl hover:bg-electric-blue hover:text-white transition-all text-[10px] font-black uppercase tracking-widest whitespace-nowrap active:scale-95 border border-white/20"
           >
             {jump.name}
           </button>
@@ -431,56 +462,72 @@ export default function InteractiveMap() {
       </div>
 
       {/* Banner Mode Tambah Lokasi */}
-      {isAddingMode && !newLocationCoords && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-sky-600 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium animate-bounce">
-          Click anywhere on the map to add a pin
-        </div>
-      )}
+      <AnimatePresence>
+        {isAddingMode && !newLocationCoords && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-24 left-1/2 -translate-x-1/2 z-[1000] glass dark:glass-dark px-8 py-4 rounded-[2rem] shadow-2xl border border-electric-blue/30 flex items-center gap-4 whitespace-nowrap"
+          >
+            <div className="w-10 h-10 rounded-full bg-electric-blue/20 flex items-center justify-center text-electric-blue animate-pulse">
+              <MapPin size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight">Add New Location</p>
+              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Tap anywhere on the map to place a marker</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Search and Filter */}
-      <div className="absolute top-4 left-4 right-4 z-[1000] flex gap-2">
-        {isAdmin && (
-          <GooglePlacesSearch 
-            onPlaceSelect={(place) => {
-              const map = (window as any).leafletMap;
-              if (map && place.geometry && place.geometry.location) {
-                const pos: [number, number] = [place.geometry.location.lat, place.geometry.location.lng];
-                map.flyTo(pos, 17);
-                
-                // Optionally add a temporary marker or highlight
-                setNewLocationCoords(pos);
-                setFormData({
-                  name: place.name,
-                  type: 'restaurant', // Default to restaurant or try to map from place.types
-                  desc: place.formatted_address || ''
-                });
-                setIsAddingMode(true);
-              }
-            }} 
-          />
-        )}
-        <select
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          className="bg-white/95 backdrop-blur-md border border-slate-200 text-slate-700 py-2.5 px-3 rounded-2xl shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm font-medium cursor-pointer"
-        >
-          <option value="all">Categories</option>
-          <option value="sunset">Sunset</option>
-          <option value="clinic">Health</option>
-          <option value="police">Police</option>
-          <option value="bike">Bike</option>
-          <option value="snorkeling">Snorkel</option>
-          <option value="port">Port</option>
-          <option value="restaurant">Food</option>
-          <option value="diving">Diving</option>
-        </select>
+      <div className="absolute top-4 left-4 right-4 z-[1000] flex flex-col gap-3">
+        <div className="flex gap-2 w-full">
+          {isAdmin && (
+            <IslandSearch 
+              onPlaceSelect={(place) => {
+                const map = (window as any).leafletMap;
+                if (map && place.geometry && place.geometry.location) {
+                  const pos: [number, number] = [place.geometry.location.lat, place.geometry.location.lng];
+                  map.flyTo(pos, 17);
+                  
+                  // Optionally add a temporary marker or highlight
+                  setNewLocationCoords(pos);
+                  setFormData({
+                    name: place.name,
+                    type: 'restaurant', // Default to restaurant or try to map from place.types
+                    desc: place.formatted_address || ''
+                  });
+                  setIsAddingMode(true);
+                }
+              }} 
+            />
+          )}
+        </div>
+        
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-2 px-2">
+          {['all', 'sunset', 'clinic', 'police', 'bike', 'snorkeling', 'port', 'restaurant', 'diving'].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setFilterCategory(cat)}
+              className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
+                filterCategory === cat 
+                  ? 'bg-electric-blue text-white border-electric-blue shadow-lg shadow-electric-blue/25 scale-105' 
+                  : 'glass dark:glass-dark text-slate-600 dark:text-slate-400 border-white/20 hover:bg-white/10'
+              }`}
+            >
+              {cat === 'all' ? 'All' : cat === 'clinic' ? 'Health' : cat === 'restaurant' ? 'Food' : cat}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Legend Toggle */}
       <div className="absolute top-20 right-4 z-[1000]">
         <button 
           onClick={() => setShowLegend(!showLegend)}
-          className="bg-white p-2.5 rounded-xl shadow-md border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center text-sky-600"
+          className="glass dark:glass-dark p-3 rounded-2xl shadow-2xl hover:bg-white/20 dark:hover:bg-slate-800/40 transition-all flex items-center justify-center text-electric-blue active:scale-95 border border-white/20"
           title="Map Legend"
         >
           <Info size={20} />
@@ -490,31 +537,49 @@ export default function InteractiveMap() {
       {/* Legend Content */}
       <AnimatePresence>
         {showLegend && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="absolute top-32 right-4 z-[1000] bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl p-4 shadow-xl w-48"
-          >
-            <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-3">Map Legend</h4>
-            <div className="space-y-2">
-              {[
-                { type: 'sunset', label: 'Sunset Point', color: 'bg-orange-500' },
-                { type: 'clinic', label: 'Clinic / Health', color: 'bg-rose-500' },
-                { type: 'police', label: 'Police Station', color: 'bg-blue-600' },
-                { type: 'bike', label: 'Bike Rental', color: 'bg-emerald-500' },
-                { type: 'snorkeling', label: 'Snorkeling', color: 'bg-sky-400' },
-                { type: 'port', label: 'Harbor / Port', color: 'bg-slate-700' },
-                { type: 'restaurant', label: 'Food / Cafe', color: 'bg-amber-500' },
-                { type: 'diving', label: 'Diving Spot', color: 'bg-indigo-600' },
-              ].map((item) => (
-                <div key={item.type} className="flex items-center gap-3">
-                  <div className={`w-3 h-3 ${item.color} rounded-full border border-white shadow-sm`}></div>
-                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">{item.label}</span>
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="glass dark:glass-dark w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20"
+            >
+              <div className="p-8">
+                <div className="flex justify-between items-center mb-8">
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">MAP LEGEND</h3>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mt-1">Icon identification guide</p>
+                  </div>
+                  <button 
+                    onClick={() => setShowLegend(false)}
+                    className="p-3 rounded-2xl hover:bg-white/10 dark:hover:bg-slate-800/40 text-slate-400 transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
                 </div>
-              ))}
-            </div>
-          </motion.div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { type: 'sunset', label: 'Sunset Point', color: 'bg-orange-500' },
+                    { type: 'clinic', label: 'Clinic / Health', color: 'bg-rose-500' },
+                    { type: 'police', label: 'Police Station', color: 'bg-electric-blue' },
+                    { type: 'bike', label: 'Bike Rental', color: 'bg-emerald-500' },
+                    { type: 'snorkeling', label: 'Snorkeling', color: 'bg-electric-blue/60' },
+                    { type: 'port', label: 'Harbor / Port', color: 'bg-slate-700' },
+                    { type: 'restaurant', label: 'Food / Cafe', color: 'bg-amber-500' },
+                    { type: 'diving', label: 'Diving Spot', color: 'bg-electric-blue' },
+                  ].map((item) => (
+                    <div key={item.type} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 dark:bg-slate-900/50 border border-white/10 dark:border-slate-800">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color} text-white shadow-lg`}>
+                        <MapPin size={18} />
+                      </div>
+                      <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -564,13 +629,13 @@ export default function InteractiveMap() {
                       type="text" 
                       value={editFormData.name}
                       onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
-                      className="w-full border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
+                      className="w-full border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-electric-blue"
                       required
                     />
                     <select 
                       value={editFormData.type}
                       onChange={(e) => setEditFormData({...editFormData, type: e.target.value})}
-                      className="w-full border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
+                      className="w-full border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-electric-blue"
                     >
                       <option value="sunset">Sunset Point</option>
                       <option value="clinic">Clinic / Health</option>
@@ -584,7 +649,7 @@ export default function InteractiveMap() {
                     <textarea 
                       value={editFormData.desc}
                       onChange={(e) => setEditFormData({...editFormData, desc: e.target.value})}
-                      className="w-full border border-slate-300 rounded px-2 py-1 text-sm h-16 resize-none focus:outline-none focus:ring-1 focus:ring-sky-500"
+                      className="w-full border border-slate-300 rounded px-2 py-1 text-sm h-16 resize-none focus:outline-none focus:ring-1 focus:ring-electric-blue"
                       required
                     />
                     <div className="flex gap-2 pt-1">
@@ -598,7 +663,7 @@ export default function InteractiveMap() {
                       <button 
                         type="submit"
                         disabled={isUpdating}
-                        className="flex-1 bg-sky-600 hover:bg-sky-700 text-white py-1 px-2 rounded text-xs font-medium transition-colors disabled:opacity-50"
+                        className="flex-1 bg-electric-blue hover:bg-electric-blue-dark text-white py-1 px-2 rounded text-xs font-medium transition-colors disabled:opacity-50"
                       >
                         {isUpdating ? 'Saving...' : 'Save'}
                       </button>
@@ -607,12 +672,12 @@ export default function InteractiveMap() {
                 ) : (
                   <>
                     <h3 className="font-bold text-lg text-slate-800">{loc.name}</h3>
-                    <span className="inline-block bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider mb-2">
+                    <span className="inline-block bg-electric-blue/10 text-electric-blue text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider mb-2">
                       {loc.type}
                     </span>
                     <p className="text-sm text-slate-600 mb-3">{loc.desc}</p>
                     <div className="flex gap-2">
-                      <button className="flex-1 bg-sky-600 hover:bg-sky-700 text-white py-1.5 px-3 rounded-md text-sm font-medium transition-colors">
+                      <button className="flex-1 bg-electric-blue hover:bg-electric-blue-dark text-white py-1.5 px-3 rounded-md text-sm font-medium transition-colors">
                         View Details
                       </button>
                       {isAdmin && (
@@ -650,98 +715,118 @@ export default function InteractiveMap() {
       
       {/* Floating Action Buttons */}
       {isAdmin && (
-        <div className="absolute bottom-6 right-6 z-[1000] flex flex-col gap-3">
+        <div className="absolute bottom-6 right-6 z-[1000] flex flex-col gap-4">
           <button 
             onClick={handleSeedData}
             disabled={isLoading}
-            className="bg-white text-sky-600 p-3.5 rounded-full shadow-lg hover:bg-sky-50 transition-colors flex items-center justify-center border border-sky-100"
+            className="glass dark:glass-dark text-electric-blue p-4 rounded-[2rem] shadow-2xl hover:bg-white/20 dark:hover:bg-slate-800/40 transition-all flex items-center justify-center border border-white/20 active:scale-90"
             title="Seed Map with Guide Data"
           >
-            {isLoading ? <Loader2 className="animate-spin" size={24} /> : <Database size={24} />}
+            {isLoading ? <Loader2 className="animate-spin" size={28} /> : <Database size={28} />}
           </button>
           <button 
             onClick={() => {
               setIsAddingMode(!isAddingMode);
               setNewLocationCoords(null);
             }}
-            className={`${isAddingMode ? 'bg-rose-500 text-white' : 'bg-sky-600 text-white'} p-3.5 rounded-full shadow-lg hover:opacity-90 transition-colors flex items-center justify-center`}
+            className={`${isAddingMode ? 'bg-rose-600' : 'bg-electric-blue'} text-white p-4 rounded-[2rem] shadow-2xl hover:opacity-90 transition-all flex items-center justify-center active:scale-90 border border-white/20`}
             title={isAddingMode ? "Cancel Add" : "Add Location"}
           >
-            {isAddingMode ? <X size={24} /> : <Plus size={24} />}
+            {isAddingMode ? <X size={28} /> : <Plus size={28} />}
           </button>
         </div>
       )}
 
       {/* Modal Form Tambah Lokasi */}
-      {newLocationCoords && (
-        <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[1000] p-6 animate-in slide-in-from-bottom-8">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <MapPin className="text-sky-600" size={20} />
-              New Location Details
-            </h3>
-            <button 
-              onClick={() => setNewLocationCoords(null)}
-              className="text-slate-400 hover:text-slate-600 bg-slate-100 p-1.5 rounded-full"
+      <AnimatePresence>
+        {newLocationCoords && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="glass dark:glass-dark w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20"
             >
-              <X size={18} />
-            </button>
+              <div className="p-8">
+                <div className="flex justify-between items-center mb-8">
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">NEW LOCATION</h3>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mt-1">Configure point of interest</p>
+                  </div>
+                  <button 
+                    onClick={() => setNewLocationCoords(null)}
+                    className="p-3 rounded-2xl hover:bg-white/10 dark:hover:bg-slate-800/40 text-slate-400 transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateLocation} className="space-y-6">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Location Name</label>
+                    <input 
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      placeholder="e.g. Sunset Bar"
+                      className="w-full bg-white/5 dark:bg-slate-900/50 border border-white/10 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-electric-blue/50 transition-all font-bold"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Category</label>
+                    <select 
+                      value={formData.type}
+                      onChange={(e) => setFormData({...formData, type: e.target.value})}
+                      className="w-full bg-white/5 dark:bg-slate-900/50 border border-white/10 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-electric-blue/50 transition-all font-bold appearance-none"
+                    >
+                      <option value="sunset" className="dark:bg-slate-900">Sunset Point</option>
+                      <option value="clinic" className="dark:bg-slate-900">Health / Clinic</option>
+                      <option value="police" className="dark:bg-slate-900">Police Station</option>
+                      <option value="bike" className="dark:bg-slate-900">Bike Rental</option>
+                      <option value="snorkeling" className="dark:bg-slate-900">Snorkeling Spot</option>
+                      <option value="port" className="dark:bg-slate-900">Port / Harbor</option>
+                      <option value="restaurant" className="dark:bg-slate-900">Restaurant / Cafe</option>
+                      <option value="diving" className="dark:bg-slate-900">Diving Center</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Description</label>
+                    <textarea 
+                      value={formData.desc}
+                      onChange={(e) => setFormData({...formData, desc: e.target.value})}
+                      placeholder="Tell us about this place..."
+                      rows={3}
+                      className="w-full bg-white/5 dark:bg-slate-900/50 border border-white/10 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-electric-blue/50 transition-all font-bold resize-none"
+                      required
+                    />
+                  </div>
+
+                  <div className="pt-4 flex gap-3">
+                    <button 
+                      type="button"
+                      onClick={() => setNewLocationCoords(null)}
+                      className="flex-1 py-4 rounded-2xl border border-white/10 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest text-xs hover:bg-white/5 transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit"
+                      disabled={isSubmitting || !formData.name.trim() || !formData.desc.trim()}
+                      className="flex-1 bg-electric-blue hover:bg-electric-blue-dark text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-electric-blue/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
+                      Save Location
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
           </div>
-          
-          <form onSubmit={handleCreateLocation} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Place Name</label>
-              <input 
-                type="text" 
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                placeholder="Example: North Sunset Point"
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                required
-                maxLength={100}
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-              <select 
-                value={formData.type}
-                onChange={(e) => setFormData({...formData, type: e.target.value})}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              >
-                <option value="sunset">Sunset Point</option>
-                <option value="clinic">Clinic / Health</option>
-                <option value="police">Police Station</option>
-                <option value="bike">Bike Rental</option>
-                <option value="snorkeling">Snorkeling Spot</option>
-                <option value="port">Port</option>
-                <option value="restaurant">Restaurant / Cafe</option>
-                <option value="diving">Diving Spot</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Short Description</label>
-              <textarea 
-                value={formData.desc}
-                onChange={(e) => setFormData({...formData, desc: e.target.value})}
-                placeholder="Describe this place..."
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 h-20 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500"
-                required
-                maxLength={500}
-              ></textarea>
-            </div>
-            
-            <button 
-              type="submit"
-              disabled={isSubmitting || !formData.name.trim() || !formData.desc.trim()}
-              className="w-full bg-sky-600 text-white font-bold py-3 rounded-xl hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-            >
-              {isSubmitting ? 'Saving...' : 'Save Location'}
-            </button>
-          </form>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Delete Confirmation Modal */}
       <ConfirmModal

@@ -6,6 +6,10 @@ import ForumList from './components/community/ForumList';
 import UserProfile from './components/profile/UserProfile';
 import ChatList from './components/chat/ChatList';
 import EventCalendar from './components/events/EventCalendar';
+import About from './components/about/About';
+import Settings from './components/settings/Settings';
+import PrivacyPolicy from './components/settings/PrivacyPolicy';
+import TermsConditions from './components/settings/TermsConditions';
 import Login from './components/auth/Login';
 import ProfileSetup from './components/auth/ProfileSetup';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -15,7 +19,7 @@ import { UIProvider, useUI } from './contexts/UIContext';
 import PublicProfileModal from './components/profile/PublicProfileModal';
 import GiliBot from './components/chat/GiliBot';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { LogOut, User, MessageCircle, Calendar, Map as MapIcon, CalendarDays, MessageSquare, UserCircle, LayoutGrid, Sun, Moon, Home as HomeIcon, ChevronLeft, Loader2 } from 'lucide-react';
+import { LogOut, User, MessageCircle, Calendar, Map as MapIcon, CalendarDays, MessageSquare, UserCircle, LayoutGrid, Sun, Moon, Home as HomeIcon, ChevronLeft, Loader2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Logo } from './components/Logo';
 import { Toaster } from 'sonner';
@@ -24,8 +28,9 @@ function MainApp() {
   const { user, userData, loading, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { isBottomNavVisible } = useUI();
-  const [activeTab, setActiveTab] = useState<'home' | 'map' | 'booking' | 'events' | 'forum' | 'chat' | 'profile'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'map' | 'booking' | 'events' | 'forum' | 'chat' | 'profile' | 'about' | 'settings' | 'privacy' | 'terms'>('home');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -40,21 +45,66 @@ function MainApp() {
     };
   }, []);
 
+  // Back button logic
+  useEffect(() => {
+    // Push initial state so we can intercept the back button
+    window.history.pushState({ app: 'gilihub' }, '');
+
+    const handlePopState = () => {
+      if ((window as any).isExiting) return;
+      
+      // Prevent default back behavior by pushing state again
+      window.history.pushState({ app: 'gilihub' }, '');
+
+      setActiveTab(currentTab => {
+        if (currentTab !== 'home') {
+          return 'home';
+        } else {
+          setShowExitConfirm(true);
+          return currentTab;
+        }
+      });
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleExitApp = () => {
+    (window as any).isExiting = true;
+    setShowExitConfirm(false);
+    // Go back past our pushed states to actually exit
+    window.history.go(-2);
+    
+    // Fallback if history.go doesn't close the app (e.g., opened directly)
+    setTimeout(() => {
+      window.close();
+    }, 300);
+  };
+
   if (loading) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-900">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-mesh relative overflow-hidden">
+        <div className="absolute inset-0 bg-white/10 dark:bg-black/10 backdrop-blur-[2px]" />
         <motion.div 
-          animate={{ 
-            scale: [1, 1.2, 1],
-            rotate: [0, 180, 360]
-          }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="w-16 h-16 bg-sky-500 rounded-2xl shadow-xl shadow-sky-500/20 mb-6 flex items-center justify-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative z-10 flex flex-col items-center"
         >
-          <Logo className="text-white" size={32} />
+          <div className="relative mb-8">
+            <div className="w-24 h-24 glass dark:glass-dark rounded-full flex items-center justify-center shadow-2xl border-white/20">
+              <div className="w-16 h-16 bg-electric-blue rounded-full animate-pulse flex items-center justify-center">
+                <Logo className="text-white" size={32} />
+              </div>
+            </div>
+            <div className="absolute -inset-4 border-2 border-electric-blue/20 rounded-full animate-spin-slow" />
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">GILIHUB</h1>
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
+            <Loader2 className="animate-spin" size={16} />
+            <span className="text-sm uppercase tracking-[0.2em]">Preparing your island escape...</span>
+          </div>
         </motion.div>
-        <p className="text-white font-display font-bold text-lg tracking-tight">GiliHub</p>
-        <p className="text-slate-500 text-xs mt-2 font-medium">Preparing your island guide...</p>
       </div>
     );
   }
@@ -66,9 +116,17 @@ function MainApp() {
   // Check if profile setup is needed
   if (user && !userData) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950">
-        <Loader2 className="animate-spin text-sky-500 mb-4" size={40} />
-        <p className="text-slate-400 font-medium">Syncing profile...</p>
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-mesh relative overflow-hidden">
+        <div className="absolute inset-0 bg-white/10 dark:bg-black/10 backdrop-blur-[2px]" />
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative z-10 flex flex-col items-center glass dark:glass-dark p-8 rounded-3xl shadow-2xl border-none"
+        >
+          <Loader2 className="animate-spin text-electric-blue mb-4" size={40} />
+          <p className="text-slate-900 dark:text-white font-bold tracking-tight">Syncing profile...</p>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">Fetching your island data</p>
+        </motion.div>
       </div>
     );
   }
@@ -78,11 +136,11 @@ function MainApp() {
   }
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans transition-colors duration-300">
+    <div className="flex flex-col h-screen w-full bg-mesh overflow-hidden font-sans transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3 z-20 flex justify-between items-center sticky top-0">
+      <header className="glass dark:glass-dark px-4 sm:px-6 py-3 z-30 flex justify-between items-center sticky top-0 rounded-b-3xl mx-2 mt-2 shadow-2xl">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-600/20">
+          <div className="w-9 h-9 bg-electric-blue rounded-xl flex items-center justify-center shadow-lg shadow-electric-blue/20">
             <Logo className="text-white" size={20} />
           </div>
           <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">GiliHub</h1>
@@ -91,7 +149,7 @@ function MainApp() {
         <div className="flex items-center gap-1.5">
           <button 
             onClick={toggleTheme}
-            className="p-2 text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+            className="p-2 text-slate-500 dark:text-slate-400 hover:text-electric-blue dark:hover:text-electric-blue hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
             title="Toggle Theme"
           >
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
@@ -106,7 +164,7 @@ function MainApp() {
             </div>
             <button 
               onClick={() => setActiveTab('profile')}
-              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-700 overflow-hidden shadow-sm hover:ring-2 hover:ring-sky-500/20 transition-all"
+              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-700 overflow-hidden shadow-sm hover:ring-2 hover:ring-electric-blue/20 transition-all"
             >
               {userData?.photoURL ? (
                 <img src={userData.photoURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -144,7 +202,11 @@ function MainApp() {
             {activeTab === 'events' && <EventCalendar />}
             {activeTab === 'forum' && <ForumList />}
             {activeTab === 'chat' && <ChatList />}
-            {activeTab === 'profile' && <UserProfile />}
+            {activeTab === 'profile' && <UserProfile setActiveTab={setActiveTab} />}
+            {activeTab === 'about' && <About onBack={() => setActiveTab('settings')} />}
+            {activeTab === 'settings' && <Settings onBack={() => setActiveTab('profile')} setActiveTab={setActiveTab} />}
+            {activeTab === 'privacy' && <PrivacyPolicy onBack={() => setActiveTab('settings')} />}
+            {activeTab === 'terms' && <TermsConditions onBack={() => setActiveTab('settings')} />}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -152,53 +214,112 @@ function MainApp() {
       {/* Bottom Navigation Bar */}
       <AnimatePresence>
         {isBottomNavVisible && (
-          <motion.nav 
-            initial={{ y: 100 }}
-            animate={{ y: 0 }}
-            exit={{ y: 100 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-6 py-3 pb-8 sm:pb-3 flex justify-around items-center sticky bottom-0 z-20 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-none"
-          >
-            <NavButton 
-              active={activeTab === 'home'} 
-              onClick={() => setActiveTab('home')} 
-              icon={<HomeIcon size={20} />} 
-              label="Home" 
-            />
-            <NavButton 
-              active={activeTab === 'map'} 
-              onClick={() => setActiveTab('map')} 
-              icon={<MapIcon size={20} />} 
-              label="Map" 
-            />
-            <NavButton 
-              active={activeTab === 'booking'} 
-              onClick={() => setActiveTab('booking')} 
-              icon={<LayoutGrid size={20} />} 
-              label="Booking" 
-            />
-            <NavButton 
-              active={activeTab === 'events'} 
-              onClick={() => setActiveTab('events')} 
-              icon={<CalendarDays size={20} />} 
-              label="Events" 
-            />
-            <NavButton 
-              active={activeTab === 'forum'} 
-              onClick={() => setActiveTab('forum')} 
-              icon={<MessageSquare size={20} />} 
-              label="Forum" 
-            />
-            <NavButton 
-              active={activeTab === 'chat'} 
-              onClick={() => setActiveTab('chat')} 
-              icon={<MessageCircle size={20} />} 
-              label="Chat" 
-            />
-          </motion.nav>
+          <div className="absolute bottom-0 left-0 right-0 z-40 pointer-events-none pb-[calc(env(safe-area-inset-bottom)+1rem)] px-4 flex justify-center">
+            <motion.nav 
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="glass dark:glass-dark px-2 py-2 flex justify-around items-center shadow-2xl rounded-[2rem] pointer-events-auto w-full max-w-md border border-white/40 dark:border-white/10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl"
+            >
+              <NavButton 
+                active={activeTab === 'home'} 
+                onClick={() => setActiveTab('home')} 
+                icon={<HomeIcon size={22} strokeWidth={activeTab === 'home' ? 2.5 : 2} />} 
+                label="Home" 
+              />
+              <NavButton 
+                active={activeTab === 'map'} 
+                onClick={() => setActiveTab('map')} 
+                icon={<MapIcon size={22} strokeWidth={activeTab === 'map' ? 2.5 : 2} />} 
+                label="Map" 
+              />
+              <NavButton 
+                active={activeTab === 'booking'} 
+                onClick={() => setActiveTab('booking')} 
+                icon={<LayoutGrid size={22} strokeWidth={activeTab === 'booking' ? 2.5 : 2} />} 
+                label="Booking" 
+              />
+              <NavButton 
+                active={activeTab === 'events'} 
+                onClick={() => setActiveTab('events')} 
+                icon={<CalendarDays size={22} strokeWidth={activeTab === 'events' ? 2.5 : 2} />} 
+                label="Events" 
+              />
+              <NavButton 
+                active={activeTab === 'forum'} 
+                onClick={() => setActiveTab('forum')} 
+                icon={<MessageSquare size={22} strokeWidth={activeTab === 'forum' ? 2.5 : 2} />} 
+                label="Forum" 
+              />
+              <NavButton 
+                active={activeTab === 'chat'} 
+                onClick={() => setActiveTab('chat')} 
+                icon={<MessageCircle size={22} strokeWidth={activeTab === 'chat' ? 2.5 : 2} />} 
+                label="Chat" 
+              />
+            </motion.nav>
+          </div>
         )}
       </AnimatePresence>
       <GiliBot />
+
+      {/* Exit Confirmation Modal */}
+      <AnimatePresence>
+        {showExitConfirm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowExitConfirm(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm glass dark:glass-dark rounded-3xl p-6 shadow-2xl border-none overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-electric-blue to-electric-blue-dark"></div>
+              
+              <div className="flex justify-between items-start mb-4">
+                <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center text-rose-500">
+                  <LogOut size={24} />
+                </div>
+                <button 
+                  onClick={() => setShowExitConfirm(false)}
+                  className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-500 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              
+              <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
+                Exit Application?
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+                Are you sure you want to exit GiliHub? You can always come back later.
+              </p>
+              
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowExitConfirm(false)}
+                  className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleExitApp}
+                  className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-500/30 transition-all active:scale-95"
+                >
+                  Exit App
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -214,23 +335,30 @@ function NavButton({ active, onClick, icon, label }: NavButtonProps) {
   return (
     <button 
       onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 transition-all relative group ${
+      className={`flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all relative group ${
         active 
-          ? 'text-sky-600 dark:text-sky-400' 
-          : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+          ? 'text-electric-blue dark:text-electric-blue bg-electric-blue/10 dark:bg-electric-blue/20' 
+          : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'
       }`}
     >
-      <div className={`p-1.5 rounded-xl transition-all duration-300 ${active ? 'bg-sky-50 dark:bg-sky-900/30 scale-110' : 'group-hover:bg-slate-50 dark:group-hover:bg-slate-800'}`}>
+      <motion.div 
+        animate={{ y: active ? -2 : 0 }}
+        className="relative z-10"
+      >
         {icon}
-      </div>
-      <span className={`text-[9px] font-black uppercase tracking-widest transition-all ${active ? 'opacity-100' : 'opacity-70'}`}>{label}</span>
-      {active && (
-        <motion.div 
-          layoutId="nav-indicator"
-          className="absolute -top-3 w-10 h-1 bg-sky-600 dark:bg-sky-400 rounded-full shadow-[0_0_10px_rgba(2,132,199,0.5)]"
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        />
-      )}
+      </motion.div>
+      <AnimatePresence>
+        {active && (
+          <motion.span 
+            initial={{ opacity: 0, y: 5, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 5, scale: 0.8 }}
+            className="text-[9px] font-bold tracking-wide absolute bottom-1.5"
+          >
+            {label}
+          </motion.span>
+        )}
+      </AnimatePresence>
     </button>
   );
 }

@@ -129,15 +129,15 @@ export default function ChatList() {
       <div className="bg-white dark:bg-slate-900 px-4 py-4 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-10 shadow-sm">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">Messages</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Chat with other users</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Messages</h2>
+            <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest">Chat with other users</p>
           </div>
           <button 
             onClick={() => {
               loadUsers();
               setIsNewChatModalOpen(true);
             }}
-            className="bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 p-2.5 rounded-full hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors"
+            className="bg-electric-blue/10 dark:bg-electric-blue/20 text-electric-blue dark:text-electric-blue-light p-2.5 rounded-full hover:bg-electric-blue/20 dark:hover:bg-electric-blue/30 transition-colors"
           >
             <Plus size={20} />
           </button>
@@ -151,14 +151,14 @@ export default function ChatList() {
               placeholder="Search by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue/20 transition-all"
             />
           </div>
           <button 
             onClick={() => setShowUnreadOnly(!showUnreadOnly)}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
               showUnreadOnly 
-                ? 'bg-sky-600 text-white shadow-lg shadow-sky-200 dark:shadow-none' 
+                ? 'bg-electric-blue text-white shadow-lg shadow-electric-blue/20' 
                 : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
             }`}
           >
@@ -168,10 +168,10 @@ export default function ChatList() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 pb-24">
+      <div className="flex-1 overflow-y-auto p-4 pb-32">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="animate-spin text-sky-600 mb-4" size={40} />
+            <Loader2 className="animate-spin text-electric-blue mb-4" size={40} />
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Loading chats...</p>
           </div>
         ) : filteredChats.length === 0 ? (
@@ -201,8 +201,8 @@ export default function ChatList() {
                   onClick={() => setSelectedChatId(chat.id)}
                   className={`bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border flex items-center gap-4 cursor-pointer transition-all active:scale-[0.98] ${
                     isUnread 
-                      ? 'border-sky-500 dark:border-sky-500 bg-sky-50/30 dark:bg-sky-900/10' 
-                      : 'border-slate-100 dark:border-slate-800 hover:border-sky-200 dark:hover:border-sky-800'
+                      ? 'border-electric-blue dark:border-electric-blue bg-electric-blue/5 dark:bg-electric-blue/10' 
+                      : 'border-slate-100 dark:border-slate-800 hover:border-electric-blue/20 dark:hover:border-electric-blue/20'
                   }`}
                 >
                   <button 
@@ -210,7 +210,7 @@ export default function ChatList() {
                       e.stopPropagation();
                       openProfile(otherUserId);
                     }}
-                    className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-sky-500 transition-all"
+                    className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-electric-blue transition-all"
                   >
                     {otherUser?.photoURL ? (
                       <img src={otherUser.photoURL} alt={otherUser.displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -233,15 +233,15 @@ export default function ChatList() {
                       >
                         {otherUser?.displayName || 'User'}
                         {otherUser?.role === 'admin' && (
-                          <BadgeCheck className="text-blue-500 flex-shrink-0" size={14} fill="currentColor" stroke="white" />
+                          <BadgeCheck className="text-electric-blue flex-shrink-0" size={14} fill="currentColor" stroke="white" />
                         )}
                       </button>
                       <div className="flex items-center gap-2">
                         {isUnread && (
-                          <span className="w-2 h-2 bg-sky-500 rounded-full"></span>
+                          <span className="w-2 h-2 bg-electric-blue rounded-full"></span>
                         )}
                         {chat.lastMessageTime && (
-                          <span className={`text-[10px] flex-shrink-0 ${isUnread ? 'text-sky-600 dark:text-sky-400 font-bold' : 'text-slate-400 dark:text-slate-500'}`}>
+                          <span className={`text-[10px] flex-shrink-0 ${isUnread ? 'text-electric-blue dark:text-electric-blue-light font-bold' : 'text-slate-400 dark:text-slate-500'}`}>
                             {new Date(chat.lastMessageTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         )}
@@ -275,7 +275,7 @@ export default function ChatList() {
             <div className="flex-1 overflow-y-auto p-4">
               {isLoadingUsers ? (
                 <div className="flex flex-col items-center justify-center py-12">
-                  <Loader2 className="animate-spin text-sky-600 mb-2" size={32} />
+                  <Loader2 className="animate-spin text-electric-blue mb-2" size={32} />
                   <p className="text-slate-500 dark:text-slate-400 text-sm">Finding users...</p>
                 </div>
               ) : users.length === 0 ? (
@@ -302,7 +302,7 @@ export default function ChatList() {
                         <h4 className="font-semibold text-slate-800 dark:text-white truncate flex items-center gap-1">
                           {u.displayName}
                           {u.role === 'admin' && (
-                            <BadgeCheck className="text-blue-500 flex-shrink-0" size={14} fill="currentColor" stroke="white" />
+                            <BadgeCheck className="text-electric-blue flex-shrink-0" size={14} fill="currentColor" stroke="white" />
                           )}
                         </h4>
                       </div>

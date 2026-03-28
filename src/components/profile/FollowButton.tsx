@@ -62,8 +62,8 @@ export default function FollowButton({ targetUserId }: FollowButtonProps) {
       className={`px-4 py-2 rounded-full text-xs font-bold transition-colors ${
         isFollowing
           ? 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700'
-          : 'bg-sky-600 text-white hover:bg-sky-700'
-      }`}
+          : 'bg-electric-blue text-white hover:bg-electric-blue-dark'
+      } transition-all active:scale-95 shadow-sm`}
     >
       {isLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
     </button>

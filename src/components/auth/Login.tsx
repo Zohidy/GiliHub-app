@@ -32,7 +32,7 @@ const FeatureItem = ({ icon: Icon, title, desc, delay }: { icon: any, title: str
     transition={{ delay, duration: 0.5 }}
     className="flex items-start gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors group"
   >
-    <div className="p-3 rounded-xl bg-sky-500/10 text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-all duration-300">
+    <div className="p-3 rounded-xl bg-electric-blue/10 text-electric-blue group-hover:bg-electric-blue group-hover:text-white transition-all duration-300">
       {Icon}
     </div>
     <div>
@@ -159,8 +159,8 @@ export default function Login() {
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden">
         {/* Background Effects */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-sky-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-indigo-600/20 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '1.5s' }}></div>
+          <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-electric-blue/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-electric-blue/20 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '1.5s' }}></div>
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
         </div>
 
@@ -170,7 +170,7 @@ export default function Login() {
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center gap-3"
           >
-            <div className="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20">
+            <div className="w-10 h-10 bg-electric-blue rounded-xl flex items-center justify-center shadow-lg shadow-electric-blue/20">
               <Logo className="text-white" size={24} />
             </div>
             <span className="text-2xl font-black text-white tracking-tighter">GiliHub</span>
@@ -181,10 +181,10 @@ export default function Login() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-6xl font-black text-white leading-[0.9] tracking-tighter"
+              className="text-5xl sm:text-6xl font-black text-white leading-[0.9] tracking-tighter"
             >
               EXPLORE THE <br />
-              <span className="text-sky-500">ISLAND LIFE.</span>
+              <span className="text-electric-blue">ISLAND LIFE.</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -231,7 +231,7 @@ export default function Login() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-white dark:bg-slate-950 relative">
         {/* Mobile Logo */}
         <div className="lg:hidden absolute top-8 left-8 flex items-center gap-2">
-          <div className="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center shadow-lg shadow-sky-500/20">
+          <div className="w-8 h-8 bg-electric-blue rounded-lg flex items-center justify-center shadow-lg shadow-electric-blue/20">
             <Logo className="text-white" size={18} />
           </div>
           <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">GiliHub</span>
@@ -248,7 +248,7 @@ export default function Login() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
                 {authMode === 'anonymous' ? 'Explore as Guest.' : isLogin ? 'Welcome back.' : 'Join the island.'}
               </h2>
               <p className="text-slate-500 dark:text-slate-400 mt-3 font-medium">
@@ -260,7 +260,7 @@ export default function Login() {
                 {authMode !== 'anonymous' && (
                   <button 
                     onClick={() => setIsLogin(!isLogin)}
-                    className="text-sky-600 dark:text-sky-400 font-bold hover:underline underline-offset-4"
+                    className="text-electric-blue dark:text-electric-blue font-bold hover:underline underline-offset-4"
                   >
                     {isLogin ? 'Create one now' : 'Sign in here'}
                   </button>
@@ -319,13 +319,13 @@ export default function Login() {
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Full Name</label>
                         <div className="relative group">
-                          <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
+                          <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-electric-blue transition-colors" size={20} />
                           <input 
                             type="text"
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             placeholder="John Doe"
-                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium dark:text-white"
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-electric-blue/20 focus:border-electric-blue transition-all font-medium dark:text-white"
                             required
                           />
                         </div>
@@ -334,13 +334,13 @@ export default function Login() {
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
                       <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-electric-blue transition-colors" size={20} />
                         <input 
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="name@example.com"
-                          className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium dark:text-white"
+                          className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-electric-blue/20 focus:border-electric-blue transition-all font-medium dark:text-white"
                           required
                         />
                       </div>
@@ -349,17 +349,17 @@ export default function Login() {
                       <div className="flex justify-between items-center ml-1">
                         <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Password</label>
                         {isLogin && (
-                          <button type="button" className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest hover:underline">Forgot?</button>
+                          <button type="button" className="text-[10px] font-bold text-electric-blue dark:text-electric-blue uppercase tracking-widest hover:underline">Forgot?</button>
                         )}
                       </div>
                       <div className="relative group">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-electric-blue transition-colors" size={20} />
                         <input 
                           type="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="••••••••"
-                          className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium dark:text-white"
+                          className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-electric-blue/20 focus:border-electric-blue transition-all font-medium dark:text-white"
                           required
                         />
                       </div>
@@ -385,13 +385,13 @@ export default function Login() {
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Phone Number</label>
                         <div className="relative group">
-                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
+                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-electric-blue transition-colors" size={20} />
                           <input 
                             type="tel"
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
                             placeholder="+62 812 3456 7890"
-                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium dark:text-white"
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-electric-blue/20 focus:border-electric-blue transition-all font-medium dark:text-white"
                             required
                           />
                         </div>
@@ -404,7 +404,7 @@ export default function Login() {
                           value={verificationCode}
                           onChange={(e) => setVerificationCode(e.target.value)}
                           placeholder="123456"
-                          className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-medium text-center text-2xl tracking-[0.5em] dark:text-white"
+                          className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-electric-blue/20 focus:border-electric-blue transition-all font-medium text-center text-2xl tracking-[0.5em] dark:text-white"
                           required
                         />
                       </div>
@@ -439,19 +439,19 @@ export default function Login() {
 
                 {authMode === 'anonymous' && (
                   <div className="space-y-6">
-                    <div className="p-6 bg-sky-50 dark:bg-sky-900/20 border border-sky-100 dark:border-sky-900/30 rounded-3xl">
-                      <div className="flex items-center gap-3 text-sky-600 dark:text-sky-400 mb-3">
+                    <div className="p-6 bg-electric-blue/10 dark:bg-electric-blue/20 border border-electric-blue/20 dark:border-electric-blue/30 rounded-3xl">
+                      <div className="flex items-center gap-3 text-electric-blue dark:text-electric-blue mb-3">
                         <ShieldCheck size={24} />
                         <h3 className="font-bold">Guest Access</h3>
                       </div>
-                      <p className="text-sm text-sky-700 dark:text-sky-300 leading-relaxed font-medium">
+                      <p className="text-sm text-electric-blue/80 dark:text-electric-blue/80 leading-relaxed font-medium">
                         Try GiliHub without an account. You can browse the map and see public events, but some features like booking and forum posting will be limited.
                       </p>
                     </div>
                     <button 
                       onClick={handleAnonymousSignIn}
                       disabled={isLoading}
-                      className="w-full py-4 bg-sky-600 text-white rounded-2xl font-bold text-lg hover:bg-sky-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-sky-600/20"
+                      className="w-full py-4 bg-electric-blue text-white rounded-2xl font-bold text-lg hover:bg-electric-blue/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-electric-blue/20"
                     >
                       {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
                         <>
@@ -495,7 +495,7 @@ export default function Login() {
         </div>
         <div className="w-px h-3 bg-white/10"></div>
         <div className="flex items-center gap-2">
-          <ShieldCheck size={12} className="text-sky-500" />
+          <ShieldCheck size={12} className="text-electric-blue" />
           <span>Secure SSL</span>
         </div>
       </div>

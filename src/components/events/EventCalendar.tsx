@@ -318,33 +318,33 @@ export default function EventCalendar() {
     { id: 'party', label: 'Party', color: 'bg-purple-100 text-purple-600' },
     { id: 'workshop', label: 'Workshop', color: 'bg-amber-100 text-amber-600' },
     { id: 'community', label: 'Community', color: 'bg-emerald-100 text-emerald-600' },
-    { id: 'sports', label: 'Sports', color: 'bg-blue-100 text-blue-600' },
-    { id: 'diving', label: 'Diving', color: 'bg-sky-100 text-sky-600' },
+    { id: 'sports', label: 'Sports', color: 'bg-electric-blue/10 text-electric-blue' },
+    { id: 'diving', label: 'Diving', color: 'bg-electric-blue/10 text-electric-blue' },
     { id: 'snorkeling', label: 'Snorkeling', color: 'bg-cyan-100 text-cyan-600' },
-    { id: 'stay', label: 'Stay', color: 'bg-indigo-100 text-indigo-600' },
+    { id: 'stay', label: 'Stay', color: 'bg-electric-blue/10 text-electric-blue' },
     { id: 'other', label: 'Other', color: 'bg-slate-100 text-slate-600' }
   ];
 
   return (
-    <div className="h-full w-full bg-slate-50 dark:bg-slate-950 flex flex-col relative overflow-hidden transition-colors duration-300">
+    <div className="h-full w-full bg-mesh flex flex-col relative overflow-hidden transition-colors duration-300">
       {/* Header */}
-      <div className="bg-white dark:bg-slate-900 px-4 py-4 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-10 shadow-sm">
+      <div className="glass dark:glass-dark px-4 py-4 sticky top-0 z-10 shadow-xl border-b border-white/20 dark:border-white/10 backdrop-blur-xl">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">Event Calendar</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Discover what's happening in Gili</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Event Calendar</h2>
+            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">Discover what's happening in Gili</p>
           </div>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setViewMode(viewMode === 'list' ? 'map' : 'list')}
-              className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 p-2.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95"
+              className="glass dark:glass-dark text-slate-600 dark:text-slate-300 p-3 rounded-2xl transition-all active:scale-95 border border-white/20 shadow-lg"
               title={viewMode === 'list' ? 'Switch to Map' : 'Switch to List'}
             >
               {viewMode === 'list' ? <MapIcon size={20} /> : <List size={20} />}
             </button>
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="bg-sky-600 text-white p-2.5 rounded-full hover:bg-sky-700 transition-all shadow-md active:scale-95"
+              className="bg-electric-blue hover:bg-electric-blue-dark text-white p-3 rounded-2xl transition-all shadow-xl shadow-electric-blue/20 active:scale-95 border border-white/20"
             >
               <Plus size={20} />
             </button>
@@ -357,10 +357,10 @@ export default function EventCalendar() {
             <button
               key={cat.id}
               onClick={() => setFilterCategory(cat.id)}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
                 filterCategory === cat.id 
-                  ? 'bg-sky-600 text-white shadow-sm' 
-                  : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-sky-300 dark:hover:border-sky-700'
+                  ? 'bg-electric-blue text-white border-electric-blue-dark shadow-xl shadow-electric-blue/20' 
+                  : 'glass dark:glass-dark text-slate-500 dark:text-slate-400 border-white/20 dark:border-white/10 hover:bg-white/10'
               }`}
             >
               {cat.label}
@@ -376,7 +376,7 @@ export default function EventCalendar() {
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-              className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full mb-4"
+              className="w-10 h-10 border-4 border-electric-blue border-t-transparent rounded-full mb-4"
             />
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Loading events...</p>
           </div>
@@ -388,7 +388,7 @@ export default function EventCalendar() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="h-full overflow-y-auto p-4 pb-24"
+              className="h-full overflow-y-auto p-4 pb-32"
             >
               {filteredEvents.length === 0 ? (
                 <div className="text-center py-16 px-4">
@@ -406,19 +406,19 @@ export default function EventCalendar() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       key={event.id}
-                      className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col"
+                      className="glass dark:glass-dark rounded-[2.5rem] overflow-hidden flex flex-col border border-white/20 dark:border-white/10 shadow-2xl"
                     >
                       {event.imageUrl && (
-                        <div className="h-40 w-full overflow-hidden relative">
+                        <div className="h-48 w-full overflow-hidden relative group/eventimg">
                           <img 
                             src={event.imageUrl} 
                             alt={event.title} 
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover group-hover/eventimg:scale-110 transition-transform duration-700"
                             referrerPolicy="no-referrer"
                           />
-                          <div className="absolute top-3 right-3">
-                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm ${
-                              categories.find(c => c.id === event.category)?.color || 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                          <div className="absolute top-4 right-4">
+                            <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg backdrop-blur-md border border-white/20 ${
+                              categories.find(c => c.id === event.category)?.color || 'bg-slate-100/80 text-slate-600 dark:bg-slate-800/80 dark:text-slate-300'
                             }`}>
                               {event.category}
                             </span>
@@ -426,10 +426,10 @@ export default function EventCalendar() {
                         </div>
                       )}
                       
-                      <div className="p-4">
+                      <div className="p-6">
                         {!event.imageUrl && (
-                          <div className="flex justify-between items-start mb-2">
-                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                          <div className="flex justify-between items-start mb-3">
+                            <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 ${
                               categories.find(c => c.id === event.category)?.color || 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
                             }`}>
                               {event.category}
@@ -437,81 +437,74 @@ export default function EventCalendar() {
                           </div>
                         )}
                         
-                        <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-2">{event.title}</h4>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-2">{event.description}</p>
+                        <h4 className="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">{event.title}</h4>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 line-clamp-2 font-medium leading-relaxed">{event.description}</p>
                         
-                        <div className="grid grid-cols-2 gap-3 mb-4">
-                          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                            <CalendarIcon size={14} className="text-sky-500" />
-                            <span className="text-xs font-medium">{new Date(event.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                          <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                            <div className="w-8 h-8 rounded-xl bg-electric-blue/10 flex items-center justify-center">
+                              <CalendarIcon size={16} className="text-electric-blue" />
+                            </div>
+                            <span className="text-xs font-black uppercase tracking-widest">{new Date(event.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                            <Clock size={14} className="text-sky-500" />
-                            <span className="text-xs font-medium">{event.time}</span>
+                          <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                            <div className="w-8 h-8 rounded-xl bg-electric-blue/10 flex items-center justify-center">
+                              <Clock size={16} className="text-electric-blue" />
+                            </div>
+                            <span className="text-xs font-black uppercase tracking-widest">{event.time}</span>
                           </div>
                           {event.recurring && event.recurring.type !== 'none' && (
                             <div className="flex flex-col gap-1 col-span-2 mt-1">
-                              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                                <RefreshCw size={14} className="animate-spin-slow" />
-                                <span className="text-xs font-bold uppercase tracking-wider">
+                              <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400">
+                                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                                  <RefreshCw size={16} className="animate-spin-slow" />
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-widest">
                                   Recurring: {event.recurring.type}
                                 </span>
                               </div>
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400 ml-6 italic">
-                                {event.recurring.type === 'weekly' && `Every ${event.recurring.weeklyDays?.join(', ')}`}
-                                {event.recurring.type === 'monthly' && (
-                                  event.recurring.monthlyOption === 'date' 
-                                    ? `Every ${event.recurring.monthlyDate}${getOrdinal(event.recurring.monthlyDate)} of the month`
-                                    : `Every ${WEEKS.find(w => w.value === event.recurring.monthlyWeek)?.label} ${event.recurring.monthlyDay} of the month`
-                                )}
-                                {event.recurring.type === 'yearly' && `Every year on ${MONTHS[event.recurring.yearlyMonth - 1]} ${event.recurring.yearlyDay}`}
-                                {event.recurring.endType !== 'never' && (
-                                  <>
-                                    {' • '}
-                                    Ends {event.recurring.endType === 'date' ? `on ${new Date(event.recurring.endDate).toLocaleDateString()}` : `after ${event.recurring.endCount} times`}
-                                  </>
-                                )}
-                              </p>
                             </div>
                           )}
-                          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 col-span-2">
-                            <MapPin size={14} className="text-sky-500" />
-                            <span className="text-xs font-medium truncate">{event.location}</span>
+                          <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 col-span-2">
+                            <div className="w-8 h-8 rounded-xl bg-electric-blue/10 flex items-center justify-center">
+                              <MapPin size={16} className="text-electric-blue" />
+                            </div>
+                            <span className="text-xs font-black uppercase tracking-widest truncate">{event.location}</span>
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-800">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center">
-                              <User size={12} className="text-sky-600 dark:text-sky-400" />
+                        <div className="flex items-center justify-between pt-6 border-t border-white/10 dark:border-white/5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-electric-blue/10 dark:bg-electric-blue/20 flex items-center justify-center border border-white/20">
+                              <User size={14} className="text-electric-blue dark:text-electric-blue-light" />
                             </div>
-                            <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">By {event.organizerName}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">By {event.organizerName}</span>
                           </div>
                           
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             <button 
                               onClick={() => handleShare(event)}
-                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-full transition-colors"
+                              className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-electric-blue dark:hover:text-electric-blue-light hover:bg-white/10 rounded-xl transition-all active:scale-90"
                               title="Share Event"
                             >
-                              <Share2 size={16} />
+                              <Share2 size={18} />
                             </button>
                             
                             {(user?.uid === event.organizerId || userData?.role === 'admin') && (
                               <>
                                 <button 
                                   onClick={() => handleEditEvent(event)}
-                                  className="p-2 text-amber-400 dark:text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-full transition-colors"
+                                  className="p-2.5 text-amber-400 dark:text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-white/10 rounded-xl transition-all active:scale-90"
                                   title="Edit Event"
                                 >
-                                  <Edit2 size={16} />
+                                  <Edit2 size={18} />
                                 </button>
                                 <button 
                                   onClick={() => handleDeleteEvent(event.id)}
-                                  className="p-2 text-rose-400 dark:text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-full transition-colors"
+                                  className="p-2.5 text-rose-400 dark:text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-white/10 rounded-xl transition-all active:scale-90"
                                   title="Delete Event"
                                 >
-                                  <Trash2 size={16} />
+                                  <Trash2 size={18} />
                                 </button>
                               </>
                             )}
@@ -554,7 +547,7 @@ export default function EventCalendar() {
                         <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 mb-2">{event.description}</p>
                         <button 
                           onClick={() => handleShare(event)}
-                          className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 rounded-lg text-[10px] font-bold hover:bg-sky-100 dark:hover:bg-sky-900/50 transition-colors"
+                          className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-electric-blue/10 dark:bg-electric-blue/20 text-electric-blue dark:text-electric-blue-light rounded-lg text-[10px] font-bold hover:bg-electric-blue/20 dark:hover:bg-electric-blue/30 transition-colors"
                         >
                           <Share2 size={12} /> Share Event
                         </button>
@@ -572,16 +565,16 @@ export default function EventCalendar() {
     {/* Add Event Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-sm z-[2000] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm z-[2000] flex items-end sm:items-center justify-center p-0 sm:p-4">
             <motion.div 
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto shadow-2xl"
+              className="glass dark:glass-dark w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 dark:border-white/10"
             >
-              <div className="sticky top-0 bg-white dark:bg-slate-900 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center z-10">
-                <h3 className="font-bold text-lg text-slate-800 dark:text-white">{editingEvent ? 'Edit Event' : 'Create New Event'}</h3>
+              <div className="sticky top-0 glass dark:glass-dark px-6 py-5 border-b border-white/10 flex justify-between items-center z-10">
+                <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tight">{editingEvent ? 'Edit Event' : 'Create Event'}</h3>
                 <button 
                   onClick={() => {
                     setIsModalOpen(false);
@@ -614,59 +607,57 @@ export default function EventCalendar() {
                 >
                   <X size={20} />
                 </button>
-              </div>
-
-              <form onSubmit={handleCreateEvent} className="p-6 space-y-4">
+              </div>              <form onSubmit={handleCreateEvent} className="p-6 space-y-5">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Event Title</label>
+                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Event Title</label>
                   <input
                     required
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
                     placeholder="e.g. Beach Clean Up"
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:focus:border-sky-500 transition-all dark:text-white dark:placeholder-slate-500"
+                    className="glass-input dark:glass-input-dark w-full rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue/50 transition-all dark:text-white dark:placeholder-slate-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Description</label>
+                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Description</label>
                   <textarea
                     required
                     rows={3}
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     placeholder="What's happening?"
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:focus:border-sky-500 transition-all resize-none dark:text-white dark:placeholder-slate-500"
+                    className="glass-input dark:glass-input-dark w-full rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue/50 transition-all resize-none dark:text-white dark:placeholder-slate-500"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Date</label>
+                    <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Date</label>
                     <input
                       required
                       type="date"
                       value={formData.date}
                       onChange={(e) => setFormData({...formData, date: e.target.value})}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:focus:border-sky-500 transition-all dark:text-white"
+                      className="glass-input dark:glass-input-dark w-full rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue/50 transition-all dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Time</label>
+                    <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Time</label>
                     <input
                       required
                       type="text"
                       value={formData.time}
                       onChange={(e) => setFormData({...formData, time: e.target.value})}
                       placeholder="e.g. 17:00 - End"
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:focus:border-sky-500 transition-all dark:text-white dark:placeholder-slate-500"
+                      className="glass-input dark:glass-input-dark w-full rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue/50 transition-all dark:text-white dark:placeholder-slate-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Location Name</label>
+                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Location Name</label>
                   <div className="relative">
                     <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     <input
@@ -675,14 +666,14 @@ export default function EventCalendar() {
                       value={formData.location}
                       onChange={(e) => setFormData({...formData, location: e.target.value})}
                       placeholder="e.g. North Beach"
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:focus:border-sky-500 transition-all dark:text-white dark:placeholder-slate-500"
+                      className="glass-input dark:glass-input-dark w-full rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue/50 transition-all dark:text-white dark:placeholder-slate-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Pin on Map (Click to set)</label>
-                  <div className="h-40 w-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 relative">
+                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Pin on Map (Click to set)</label>
+                  <div className="h-44 w-full rounded-2xl overflow-hidden border border-white/10 relative shadow-inner">
                     <MapContainer 
                       center={formData.position} 
                       zoom={14} 
@@ -697,13 +688,13 @@ export default function EventCalendar() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Category</label>
+                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Category</label>
                   <div className="relative">
                     <Tag size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     <select
                       value={formData.category}
                       onChange={(e) => setFormData({...formData, category: e.target.value})}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:focus:border-sky-500 transition-all appearance-none dark:text-white"
+                      className="glass-input dark:glass-input-dark w-full rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue/50 transition-all appearance-none dark:text-white"
                     >
                       <option value="party">Party</option>
                       <option value="workshop">Workshop</option>
@@ -718,10 +709,10 @@ export default function EventCalendar() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 ml-1">Recurring Event</label>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 ml-1">Recurring Event</label>
+                  <div className="bg-white/30 dark:bg-white/5 rounded-[2rem] border border-white/20 dark:border-white/10 overflow-hidden backdrop-blur-sm">
                     {/* Recurrence Type Selector */}
-                    <div className="flex p-1 bg-slate-100/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                    <div className="flex p-1.5 bg-white/20 dark:bg-black/20 border-b border-white/10">
                       {['none', 'weekly', 'monthly', 'yearly'].map((type) => (
                         <button
                           key={type}
@@ -730,10 +721,10 @@ export default function EventCalendar() {
                             ...formData, 
                             recurring: { ...formData.recurring, type: type as any }
                           })}
-                          className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all ${
+                          className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${
                             formData.recurring.type === type
-                              ? 'bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm'
-                              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                              ? 'bg-white dark:bg-slate-700 text-electric-blue dark:text-electric-blue-light shadow-lg'
+                              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                           }`}
                         >
                           {type === 'none' ? 'One-time' : type}
@@ -741,7 +732,7 @@ export default function EventCalendar() {
                       ))}
                     </div>
 
-                    <div className="p-4 space-y-4">
+                    <div className="p-5 space-y-5">
                       <AnimatePresence mode="wait">
                         {formData.recurring.type === 'weekly' && (
                           <motion.div
@@ -751,8 +742,8 @@ export default function EventCalendar() {
                             key="weekly"
                             className="space-y-3"
                           >
-                            <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Repeat on</label>
-                            <div className="flex flex-wrap gap-2">
+                            <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Repeat on</label>
+                            <div className="flex flex-wrap gap-2.5">
                               {DAYS_OF_WEEK.map(day => (
                                 <button
                                   key={day}
@@ -763,10 +754,10 @@ export default function EventCalendar() {
                                       : [...formData.recurring.weeklyDays, day];
                                     setFormData({ ...formData, recurring: { ...formData.recurring, weeklyDays: days } });
                                   }}
-                                  className={`w-10 h-10 rounded-xl text-xs font-bold transition-all flex items-center justify-center ${
+                                  className={`w-11 h-11 rounded-2xl text-[10px] font-black transition-all flex items-center justify-center ${
                                     formData.recurring.weeklyDays.includes(day)
-                                      ? 'bg-sky-600 text-white shadow-md'
-                                      : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-sky-300 dark:hover:border-sky-700'
+                                      ? 'bg-electric-blue text-white shadow-lg shadow-electric-blue/20'
+                                      : 'glass-card dark:glass-card-dark text-slate-500 dark:text-slate-400 border-white/20 dark:border-white/10'
                                   }`}
                                 >
                                   {day.slice(0, 1)}
@@ -784,14 +775,14 @@ export default function EventCalendar() {
                             key="monthly"
                             className="space-y-4"
                           >
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-2 gap-3">
                               <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, recurring: { ...formData.recurring, monthlyOption: 'date' } })}
-                                className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                                className={`py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${
                                   formData.recurring.monthlyOption === 'date'
-                                    ? 'bg-sky-50 dark:bg-sky-900/30 border-sky-200 dark:border-sky-800 text-sky-600 dark:text-sky-400'
-                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
+                                    ? 'bg-electric-blue/10 border-electric-blue/50 text-electric-blue dark:text-electric-blue-light shadow-sm'
+                                    : 'glass-card dark:glass-card-dark text-slate-500 dark:text-slate-400 border-white/20 dark:border-white/10'
                                 }`}
                               >
                                 Specific Date
@@ -799,46 +790,46 @@ export default function EventCalendar() {
                               <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, recurring: { ...formData.recurring, monthlyOption: 'dayOfWeek' } })}
-                                className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                                className={`py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${
                                   formData.recurring.monthlyOption === 'dayOfWeek'
-                                    ? 'bg-sky-50 dark:bg-sky-900/30 border-sky-200 dark:border-sky-800 text-sky-600 dark:text-sky-400'
-                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
+                                    ? 'bg-electric-blue/10 border-electric-blue/50 text-electric-blue dark:text-electric-blue-light shadow-sm'
+                                    : 'glass-card dark:glass-card-dark text-slate-500 dark:text-slate-400 border-white/20 dark:border-white/10'
                                 }`}
                               >
-                                Specific Day
+                                Day of Week
                               </button>
                             </div>
 
                             {formData.recurring.monthlyOption === 'date' ? (
-                              <div className="flex items-center gap-3 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
-                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Day</span>
+                              <div className="flex items-center gap-3 bg-white/20 dark:bg-black/20 p-4 rounded-2xl border border-white/10">
+                                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Day</span>
                                 <input 
                                   type="number" 
                                   min="1" 
                                   max="31"
                                   value={formData.recurring.monthlyDate}
                                   onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, monthlyDate: parseInt(e.target.value) } })}
-                                  className="w-16 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm font-bold text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                                  className="w-20 glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-sm font-black text-slate-700 dark:text-white focus:outline-none"
                                 />
-                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">of the month</span>
+                                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">of the month</span>
                               </div>
                             ) : (
-                              <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                              <div className="flex flex-wrap items-center gap-2.5 bg-white/20 dark:bg-black/20 p-4 rounded-2xl border border-white/10">
                                 <select
                                   value={formData.recurring.monthlyWeek}
                                   onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, monthlyWeek: parseInt(e.target.value) } })}
-                                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700 dark:text-white focus:outline-none"
+                                  className="glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-white focus:outline-none"
                                 >
                                   {WEEKS.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
                                 </select>
                                 <select
                                   value={formData.recurring.monthlyDay}
                                   onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, monthlyDay: e.target.value } })}
-                                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700 dark:text-white focus:outline-none"
+                                  className="glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-white focus:outline-none"
                                 >
                                   {DAYS_OF_WEEK.map(d => <option key={d} value={d}>{d}</option>)}
                                 </select>
-                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">of the month</span>
+                                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">of the month</span>
                               </div>
                             )}
                           </motion.div>
@@ -850,13 +841,13 @@ export default function EventCalendar() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             key="yearly"
-                            className="flex items-center gap-2 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700"
+                            className="flex items-center gap-3 bg-white/20 dark:bg-black/20 p-4 rounded-2xl border border-white/10"
                           >
-                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Every</span>
+                            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Every</span>
                             <select
                               value={formData.recurring.yearlyMonth}
                               onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, yearlyMonth: parseInt(e.target.value) } })}
-                              className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700 dark:text-white focus:outline-none"
+                              className="glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-white focus:outline-none"
                             >
                               {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
                             </select>
@@ -866,48 +857,48 @@ export default function EventCalendar() {
                               max="31"
                               value={formData.recurring.yearlyDay}
                               onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, yearlyDay: parseInt(e.target.value) } })}
-                              className="w-16 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm font-bold text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                              className="w-20 glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-sm font-black text-slate-700 dark:text-white focus:outline-none"
                             />
                           </motion.div>
                         )}
                       </AnimatePresence>
 
                       {formData.recurring.type !== 'none' && (
-                        <div className="pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
-                          <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">End Recurrence</label>
-                          <div className="grid grid-cols-1 gap-2">
+                        <div className="pt-5 border-t border-white/10 space-y-4">
+                          <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">End Recurrence</label>
+                          <div className="grid grid-cols-1 gap-3">
                             <button
                               type="button"
                               onClick={() => setFormData({ ...formData, recurring: { ...formData.recurring, endType: 'never' } })}
-                              className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
+                              className={`flex items-center justify-between px-5 py-4 rounded-2xl border transition-all ${
                                 formData.recurring.endType === 'never'
-                                  ? 'bg-sky-50 dark:bg-sky-900/30 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-400'
-                                  : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-200 dark:hover:border-slate-600'
+                                  ? 'bg-electric-blue/10 border-electric-blue/50 text-electric-blue dark:text-electric-blue-light shadow-sm'
+                                  : 'bg-white/10 border-white/10 text-slate-600 dark:text-slate-400 hover:bg-white/20'
                               }`}
                             >
-                              <span className="text-xs font-bold">Never Ends</span>
-                              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                formData.recurring.endType === 'never' ? 'border-sky-500 bg-sky-500' : 'border-slate-200 dark:border-slate-600'
+                              <span className="text-[10px] font-black uppercase tracking-widest">Never Ends</span>
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                formData.recurring.endType === 'never' ? 'border-electric-blue bg-electric-blue' : 'border-white/20'
                               }`}>
-                                {formData.recurring.endType === 'never' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                {formData.recurring.endType === 'never' && <div className="w-2 h-2 rounded-full bg-white" />}
                               </div>
                             </button>
 
-                            <div className={`flex flex-col gap-3 px-4 py-3 rounded-xl border transition-all ${
+                            <div className={`flex flex-col gap-4 px-5 py-4 rounded-2xl border transition-all ${
                               formData.recurring.endType === 'date'
-                                ? 'bg-sky-50 dark:bg-sky-900/30 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-400'
-                                : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-200 dark:hover:border-slate-600'
+                                ? 'bg-electric-blue/10 border-electric-blue/50 text-electric-blue dark:text-electric-blue-light shadow-sm'
+                                : 'bg-white/10 border-white/10 text-slate-600 dark:text-slate-400 hover:bg-white/20'
                             }`}>
                               <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, recurring: { ...formData.recurring, endType: 'date' } })}
                                 className="flex items-center justify-between w-full"
                               >
-                                <span className="text-xs font-bold">Ends on Date</span>
-                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                  formData.recurring.endType === 'date' ? 'border-sky-500 bg-sky-500' : 'border-slate-200 dark:border-slate-600'
+                                <span className="text-[10px] font-black uppercase tracking-widest">Ends on Date</span>
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                  formData.recurring.endType === 'date' ? 'border-electric-blue bg-electric-blue' : 'border-white/20'
                                 }`}>
-                                  {formData.recurring.endType === 'date' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                  {formData.recurring.endType === 'date' && <div className="w-2 h-2 rounded-full bg-white" />}
                                 </div>
                               </button>
                               {formData.recurring.endType === 'date' && (
@@ -915,38 +906,38 @@ export default function EventCalendar() {
                                   type="date"
                                   value={formData.recurring.endDate}
                                   onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, endDate: e.target.value } })}
-                                  className="w-full bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-800 rounded-lg px-3 py-2 text-xs font-bold text-sky-700 dark:text-sky-400 focus:outline-none dark:color-scheme-dark"
+                                  className="w-full glass-input dark:glass-input-dark border-electric-blue/30 rounded-xl px-4 py-2.5 text-xs font-black text-electric-blue dark:text-electric-blue-light focus:outline-none dark:color-scheme-dark"
                                 />
                               )}
                             </div>
 
-                            <div className={`flex flex-col gap-3 px-4 py-3 rounded-xl border transition-all ${
+                            <div className={`flex flex-col gap-4 px-5 py-4 rounded-2xl border transition-all ${
                               formData.recurring.endType === 'count'
-                                ? 'bg-sky-50 dark:bg-sky-900/30 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-400'
-                                : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-200 dark:hover:border-slate-600'
+                                ? 'bg-electric-blue/10 border-electric-blue/50 text-electric-blue dark:text-electric-blue-light shadow-sm'
+                                : 'bg-white/10 border-white/10 text-slate-600 dark:text-slate-400 hover:bg-white/20'
                             }`}>
                               <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, recurring: { ...formData.recurring, endType: 'count' } })}
                                 className="flex items-center justify-between w-full"
                               >
-                                <span className="text-xs font-bold">Ends after occurrences</span>
-                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                  formData.recurring.endType === 'count' ? 'border-sky-500 bg-sky-500' : 'border-slate-200 dark:border-slate-600'
+                                <span className="text-[10px] font-black uppercase tracking-widest">Ends after occurrences</span>
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                  formData.recurring.endType === 'count' ? 'border-electric-blue bg-electric-blue' : 'border-white/20'
                                 }`}>
-                                  {formData.recurring.endType === 'count' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                  {formData.recurring.endType === 'count' && <div className="w-2 h-2 rounded-full bg-white" />}
                                 </div>
                               </button>
                               {formData.recurring.endType === 'count' && (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-3">
                                   <input 
                                     type="number"
                                     min="1"
                                     value={formData.recurring.endCount}
                                     onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, endCount: parseInt(e.target.value) } })}
-                                    className="w-20 bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-800 rounded-lg px-3 py-2 text-xs font-bold text-sky-700 dark:text-sky-400 focus:outline-none"
+                                    className="w-24 glass-input dark:glass-input-dark border-electric-blue/30 rounded-xl px-4 py-2.5 text-sm font-black text-electric-blue dark:text-electric-blue-light focus:outline-none"
                                   />
-                                  <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider">Times</span>
+                                  <span className="text-[10px] font-black text-electric-blue dark:text-electric-blue-light uppercase tracking-widest">Times</span>
                                 </div>
                               )}
                             </div>
@@ -958,7 +949,7 @@ export default function EventCalendar() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Image URL (Optional)</label>
+                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Image URL (Optional)</label>
                   <div className="relative">
                     <ImageIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     <input
@@ -966,7 +957,7 @@ export default function EventCalendar() {
                       value={formData.imageUrl}
                       onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
                       placeholder="https://..."
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:focus:border-sky-500 transition-all dark:text-white dark:placeholder-slate-500"
+                      className="glass-input dark:glass-input-dark w-full rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue/50 transition-all dark:text-white dark:placeholder-slate-500"
                     />
                   </div>
                 </div>
@@ -974,7 +965,7 @@ export default function EventCalendar() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-sky-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-sky-200 dark:shadow-none hover:bg-sky-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] mt-4"
+                  className="w-full bg-electric-blue hover:bg-electric-blue-dark text-white font-black py-4.5 rounded-[2rem] shadow-xl shadow-electric-blue/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] mt-6 border border-white/20 backdrop-blur-md uppercase tracking-widest text-xs"
                 >
                   {isSubmitting ? (
                     editingEvent ? 'Updating Event...' : 'Creating Event...'

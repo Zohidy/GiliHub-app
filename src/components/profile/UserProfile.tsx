@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { User, Mail, Shield, Calendar, LogOut, Edit2, Check, X, Loader2, AlertTriangle, Link as LinkIcon, Settings, Moon, Sun, Bell, Globe, ChevronRight, Download, CircleDollarSign, Ruler, BadgeCheck, Plus, Trash2, Twitter, Instagram, Facebook, Linkedin, Github, RefreshCw } from 'lucide-react';
+import { User, Mail, Shield, Calendar, LogOut, Edit2, Check, X, Loader2, AlertTriangle, Link as LinkIcon, Settings, ChevronRight, BadgeCheck, Plus, Trash2, Twitter, Instagram, Facebook, Linkedin, Github, RefreshCw } from 'lucide-react';
 import { doc, updateDoc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorHandler';
 import { toast } from 'sonner';
 
-export default function UserProfile() {
+interface UserProfileProps {
+  setActiveTab?: (tab: 'home' | 'map' | 'booking' | 'events' | 'forum' | 'chat' | 'profile' | 'about' | 'settings' | 'privacy' | 'terms') => void;
+}
+
+export default function UserProfile({ setActiveTab }: UserProfileProps) {
   const { user, userData, signOut, sendVerificationEmail } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
@@ -18,15 +22,11 @@ export default function UserProfile() {
   const [editSocialLinks, setEditSocialLinks] = useState<{ platform: string, url: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [offlineReady, setOfflineReady] = useState(false);
-  const [currency, setCurrency] = useState('IDR');
-  const [distanceUnit, setDistanceUnit] = useState('km');
 
   if (!userData) {
     return (
       <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-electric-blue"></div>
       </div>
     );
   }
@@ -170,7 +170,7 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-50 dark:bg-slate-950 p-4 pb-24 transition-colors duration-300">
+    <div className="h-full w-full overflow-y-auto bg-slate-50 dark:bg-slate-950 p-4 pb-32 transition-colors duration-300">
       {user?.isAnonymous && (
         <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl flex flex-col gap-3 shadow-sm">
           <div className="flex items-start gap-3 text-amber-700 dark:text-amber-400">
@@ -192,8 +192,11 @@ export default function UserProfile() {
         </div>
       )}
 
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">My Profile</h2>
+      <div className="mb-8 flex justify-between items-end relative z-10">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">My Profile</h2>
+          <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest">Manage your account</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -211,7 +214,7 @@ export default function UserProfile() {
               {isEditing && (
                 <button 
                   onClick={generateDicebearAvatar}
-                  className="absolute -bottom-1 -right-1 p-1.5 bg-sky-600 text-white rounded-full shadow-lg hover:bg-sky-700 transition-all"
+                  className="absolute -bottom-1 -right-1 p-1.5 bg-electric-blue text-white rounded-full shadow-lg hover:bg-electric-blue-dark transition-all"
                   title="Generate Random Avatar"
                 >
                   <RefreshCw size={14} className={isSubmitting ? 'animate-spin' : ''} />
@@ -221,7 +224,7 @@ export default function UserProfile() {
             <button 
               onClick={isEditing ? handleSave : handleEdit}
               disabled={isSubmitting}
-              className="p-3 bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 rounded-full hover:bg-sky-100 dark:hover:bg-sky-900/50 transition-colors"
+              className="p-3 bg-electric-blue/10 dark:bg-electric-blue/20 text-electric-blue dark:text-electric-blue-light rounded-full hover:bg-electric-blue/20 dark:hover:bg-electric-blue/30 transition-colors"
             >
               {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : (isEditing ? <Check size={20} /> : <Edit2 size={20} />)}
             </button>
@@ -229,7 +232,7 @@ export default function UserProfile() {
 
           {isEditing ? (
             <div className="space-y-3">
-              <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="text-2xl font-bold bg-transparent border-b border-sky-500 w-full focus:outline-none" maxLength={50} />
+              <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="text-2xl font-bold bg-transparent border-b border-electric-blue w-full focus:outline-none" maxLength={50} />
               <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="text-sm bg-transparent border border-slate-200 dark:border-slate-700 rounded-xl w-full p-3" rows={3} maxLength={500} placeholder="Bio..." />
             </div>
           ) : (
@@ -263,7 +266,7 @@ export default function UserProfile() {
           ) : (
             <div className="flex flex-wrap gap-2">
               {userData.interests?.map((interest: string) => (
-                <span key={interest} className="text-xs font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 px-3 py-1 rounded-full">{interest}</span>
+                <span key={interest} className="text-xs font-bold bg-electric-blue/10 dark:bg-electric-blue/20 text-electric-blue dark:text-electric-blue-light px-3 py-1 rounded-full">{interest}</span>
               )) || <p className="text-slate-400 text-sm">No interests added.</p>}
             </div>
           )}
@@ -279,7 +282,7 @@ export default function UserProfile() {
                   <select 
                     value={link.platform} 
                     onChange={(e) => updateSocialLink(index, 'platform', e.target.value)}
-                    className="text-[10px] font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                    className="text-[10px] font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-electric-blue/20"
                   >
                     <option value="Twitter">Twitter</option>
                     <option value="Instagram">Instagram</option>
@@ -293,7 +296,7 @@ export default function UserProfile() {
                     value={link.url} 
                     onChange={(e) => updateSocialLink(index, 'url', e.target.value)}
                     placeholder="https://..."
-                    className="flex-1 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                    className="flex-1 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-electric-blue/20"
                   />
                   <button onClick={() => removeSocialLink(index)} className="text-rose-500 p-1 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors">
                     <Trash2 size={16} />
@@ -302,7 +305,7 @@ export default function UserProfile() {
               ))}
               <button 
                 onClick={addSocialLink}
-                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-bold text-slate-400 hover:border-sky-500 hover:text-sky-500 transition-all flex items-center justify-center gap-2"
+                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-bold text-slate-400 hover:border-electric-blue hover:text-electric-blue transition-all flex items-center justify-center gap-2"
               >
                 <Plus size={14} />
                 Add Link
@@ -317,7 +320,7 @@ export default function UserProfile() {
                     href={url as string} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all"
+                    className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-electric-blue dark:hover:text-electric-blue-light hover:bg-electric-blue/10 dark:hover:bg-electric-blue/20 transition-all"
                     title={platform}
                   >
                     {getPlatformIcon(platform)}
@@ -333,107 +336,20 @@ export default function UserProfile() {
 
       {/* Settings Section */}
       <div className="mt-6">
-        <h2 className="text-lg font-bold text-slate-800 dark:text-white tracking-tight mb-3 flex items-center gap-2">
-          <Settings size={20} className="text-sky-500" />
-          Settings
-        </h2>
-        
-        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
           
-          {/* Theme Toggle */}
-          <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onClick={toggleTheme}>
+          {/* Settings Button */}
+          <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onClick={() => setActiveTab && setActiveTab('settings')}>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
-                {theme === 'light' ? <Sun size={16} /> : <Moon size={16} />}
+              <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
+                <Settings size={20} />
               </div>
               <div>
-                <p className="text-sm font-bold text-slate-800 dark:text-white">Dark Mode</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Toggle dark theme</p>
+                <p className="text-base font-bold text-slate-800 dark:text-white">Settings</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Preferences, Privacy, and About</p>
               </div>
             </div>
-            <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${theme === 'dark' ? 'bg-sky-500' : 'bg-slate-200 dark:bg-slate-700'}`}>
-              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ease-in-out ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`} />
-            </div>
-          </div>
-
-          {/* Notifications */}
-          <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onClick={() => setNotificationsEnabled(!notificationsEnabled)}>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                <Bell size={16} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-800 dark:text-white">Notifications</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Push notifications</p>
-              </div>
-            </div>
-            <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${notificationsEnabled ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}`}>
-              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ease-in-out ${notificationsEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
-            </div>
-          </div>
-
-          {/* Language */}
-          <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                <Globe size={16} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-800 dark:text-white">Language</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">English (US)</p>
-              </div>
-            </div>
-            <ChevronRight size={18} className="text-slate-400" />
-          </div>
-
-          {/* Offline Data */}
-          <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onClick={() => setOfflineReady(!offlineReady)}>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
-                <Download size={16} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-800 dark:text-white">Offline Maps & Data</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Save content to device</p>
-              </div>
-            </div>
-            <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${offlineReady ? 'bg-orange-500' : 'bg-slate-200 dark:bg-slate-700'}`}>
-              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ease-in-out ${offlineReady ? 'translate-x-6' : 'translate-x-0'}`} />
-            </div>
-          </div>
-
-          {/* Currency */}
-          <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onClick={() => setCurrency(currency === 'IDR' ? 'USD' : 'IDR')}>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400">
-                <CircleDollarSign size={16} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-800 dark:text-white">Currency</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">For bookings and prices</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{currency}</span>
-              <ChevronRight size={18} className="text-slate-400" />
-            </div>
-          </div>
-
-          {/* Distance Unit */}
-          <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onClick={() => setDistanceUnit(distanceUnit === 'km' ? 'mi' : 'km')}>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
-                <Ruler size={16} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-800 dark:text-white">Distance Unit</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Kilometers or Miles</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{distanceUnit === 'km' ? 'Kilometers' : 'Miles'}</span>
-              <ChevronRight size={18} className="text-slate-400" />
-            </div>
+            <ChevronRight size={20} className="text-slate-400" />
           </div>
 
         </div>

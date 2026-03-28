@@ -110,32 +110,32 @@ export default function PublicProfileModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+      <div className="glass dark:glass-dark rounded-[40px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-300 border border-white/20 dark:border-white/10">
         <div className="relative">
-          <div className="bg-sky-600 h-24"></div>
+          <div className="bg-gradient-to-r from-electric-blue to-electric-blue-dark h-32"></div>
           <button 
             onClick={closeProfile}
-            className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-colors"
+            className="absolute top-4 right-4 p-2.5 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-xl transition-all active:scale-90 border border-white/20"
           >
             <X size={20} />
           </button>
         </div>
         
-        <div className="px-6 pb-6 relative">
+        <div className="px-8 pb-8 relative">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 size={32} className="animate-spin text-sky-500 mb-4" />
-              <p className="text-slate-500">Loading profile...</p>
+            <div className="flex flex-col items-center justify-center py-16">
+              <Loader2 size={40} className="animate-spin text-electric-blue mb-4" />
+              <p className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Loading profile...</p>
             </div>
           ) : profileData ? (
             <>
-              <div className="flex justify-between items-end -mt-12 mb-4">
-                <div className="w-24 h-24 rounded-full border-4 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 overflow-hidden flex items-center justify-center shadow-md">
+              <div className="flex justify-between items-end -mt-16 mb-6">
+                <div className="w-32 h-32 rounded-[40px] border-4 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 overflow-hidden flex items-center justify-center shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500">
                   {profileData.photoURL ? (
                     <img src={profileData.photoURL} alt={profileData.displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
-                    <User size={40} className="text-slate-400 dark:text-slate-500" />
+                    <User size={48} className="text-slate-400 dark:text-slate-500" />
                   )}
                 </div>
                 
@@ -143,10 +143,10 @@ export default function PublicProfileModal() {
                   <button
                     onClick={handleFollowToggle}
                     disabled={followLoading}
-                    className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-colors ${
+                    className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 shadow-lg ${
                       isFollowing 
-                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-900/30 dark:hover:text-rose-400' 
-                        : 'bg-sky-500 text-white hover:bg-sky-600'
+                        ? 'glass dark:glass-dark text-slate-700 dark:text-slate-300 hover:bg-rose-500 hover:text-white border-white/20' 
+                        : 'bg-electric-blue text-white hover:bg-electric-blue-dark shadow-electric-blue/20'
                     }`}
                   >
                     {followLoading ? (
@@ -166,46 +166,38 @@ export default function PublicProfileModal() {
                 )}
               </div>
 
-              <div className="flex items-center gap-1.5 mb-3">
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white">{profileData.displayName}</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{profileData.displayName}</h3>
                 {profileData.role === 'admin' && (
-                  <BadgeCheck className="text-blue-500" size={20} fill="currentColor" stroke="white" />
+                  <BadgeCheck className="text-electric-blue" size={24} fill="currentColor" stroke="white" />
                 )}
               </div>
               
               {profileData.bio && (
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 mb-4 whitespace-pre-wrap">{profileData.bio}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 mb-6 whitespace-pre-wrap font-medium leading-relaxed">{profileData.bio}</p>
               )}
+              
               {profileData.interests && profileData.interests.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-6">
                   {profileData.interests.map((interest: string) => (
-                    <span key={interest} className="text-[10px] font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 px-2 py-1 rounded-full">{interest}</span>
-                  ))}
-                </div>
-              )}
-              {profileData.socialLinks && Object.keys(profileData.socialLinks).length > 0 && (
-                <div className="flex gap-3 mb-4">
-                  {Object.entries(profileData.socialLinks).map(([platform, url]) => (
-                    <a key={platform} href={url as string} target="_blank" rel="noopener noreferrer" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400">
-                      <User size={16} />
-                    </a>
+                    <span key={interest} className="text-[10px] font-black uppercase tracking-widest bg-electric-blue/10 dark:bg-electric-blue/20 text-electric-blue dark:text-electric-blue-light px-3 py-1.5 rounded-xl border border-electric-blue/20">{interest}</span>
                   ))}
                 </div>
               )}
               
-              <div className="flex gap-6 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex gap-8 mt-6 pt-6 border-t border-white/10 dark:border-white/5">
                 <div className="flex flex-col">
-                  <span className="text-lg font-bold text-slate-800 dark:text-white">{profileData.followersCount || 0}</span>
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Followers</span>
+                  <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{profileData.followersCount || 0}</span>
+                  <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 dark:text-slate-500">Followers</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-lg font-bold text-slate-800 dark:text-white">{profileData.followingCount || 0}</span>
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Following</span>
+                  <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{profileData.followingCount || 0}</span>
+                  <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 dark:text-slate-500">Following</span>
                 </div>
               </div>
             </>
           ) : (
-            <div className="py-8 text-center text-slate-500">Profile not available</div>
+            <div className="py-12 text-center text-slate-500 font-black uppercase tracking-widest text-xs">Profile not available</div>
           )}
         </div>
       </div>

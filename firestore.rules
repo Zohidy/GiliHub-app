@@ -16,10 +16,9 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() &&
         (
+          (request.auth.token.email in ["zohidydy@gmail.com", "zohidin384@gmail.com"] && request.auth.token.email_verified == true) ||
           (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-          (request.auth.token.email in ["zohidydy@gmail.com", "zohidin384@gmail.com"]) ||
-          (request.auth.uid == "WyY9HFdDnqWvJ6w2QvUgW7ytQNd2")
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
         );
     }
 
@@ -27,6 +26,14 @@ service cloud.firestore {
       return isAuthenticated() &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'provider';
+    }
+
+    function isBookingOwner() {
+      return isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    function isBookingProvider() {
+      return isAuthenticated() && resource.data.providerId == request.auth.uid;
     }
 
     function hasOnlyAllowedFields(fields) {
@@ -45,7 +52,7 @@ service cloud.firestore {
       let data = request.resource.data;
       return hasOnlyAllowedFields(['uid', 'displayName', 'email', 'photoURL', 'role', 'createdAt', 'updatedAt', 'bio', 'followersCount', 'followingCount', 'socialLinks', 'interests', 'profileSetupCompleted', 'country', 'gender']) &&
              data.uid == request.auth.uid &&
-             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 50 &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 100 &&
              data.email is string && isValidEmail(data.email) &&
              (!('photoURL' in data) || data.photoURL == null || (data.photoURL is string && data.photoURL.size() < 2000)) &&
              (!('bio' in data) || data.bio == null || (data.bio is string && data.bio.size() <= 1000)) &&
@@ -82,13 +89,14 @@ service cloud.firestore {
 
     function isValidLocation() {
       let data = request.resource.data;
-      return hasOnlyAllowedFields(['name', 'type', 'position', 'desc', 'createdBy']) &&
+      return hasOnlyAllowedFields(['name', 'type', 'position', 'desc', 'createdBy', 'updatedAt']) &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
              data.type in ["sunset", "clinic", "police", "bike", "snorkeling", "port", "restaurant", "diving"] &&
              data.position is list && data.position.size() == 2 &&
              data.position[0] is number && data.position[1] is number &&
              data.desc is string && data.desc.size() <= 500 &&
-             data.createdBy is string;
+             data.createdBy is string &&
+             (!('updatedAt' in data) || data.updatedAt is string);
     }
 
     function isValidBookingItem() {
@@ -172,7 +180,7 @@ service cloud.firestore {
 
     function isValidEvent() {
       let data = request.resource.data;
-      return hasOnlyAllowedFields(['title', 'description', 'date', 'time', 'location', 'position', 'organizerId', 'organizerName', 'imageUrl', 'category', 'recurring', 'createdAt']) &&
+      return hasOnlyAllowedFields(['title', 'description', 'date', 'time', 'location', 'position', 'organizerId', 'organizerName', 'imageUrl', 'category', 'recurring', 'createdAt', 'updatedAt']) &&
              data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
              data.description is string && data.description.size() > 0 && data.description.size() < 1000 &&
              data.date is string &&
@@ -186,7 +194,8 @@ service cloud.firestore {
              data.category in ["party", "workshop", "community", "sports", "other"] &&
              data.recurring is map &&
              data.recurring.type in ["none", "weekly", "monthly", "yearly"] &&
-             data.createdAt is string;
+             data.createdAt is string &&
+             (!('updatedAt' in data) || data.updatedAt is string);
     }
 
     function isValidThreadCounterUpdate() {
@@ -198,8 +207,8 @@ service cloud.firestore {
       let oldReplies = resource.data.get('repliesCount', 0);
       let newReplies = request.resource.data.get('repliesCount', 0);
       
-      return (affected.hasOnly(['repliesCount']) && newReplies == oldReplies + 1) ||
-             (affected.hasOnly(['likesCount', 'likedBy']) && 
+      return (affected.hasOnly(['repliesCount', 'updatedAt']) && newReplies == oldReplies + 1) ||
+             (affected.hasOnly(['likesCount', 'likedBy', 'updatedAt']) && 
               math.abs(newLikes - oldLikes) == 1 &&
               ((newLikes == oldLikes + 1 && !oldLikedBy.contains(request.auth.uid) && newLikedBy.contains(request.auth.uid)) ||
                (newLikes == oldLikes - 1 && oldLikedBy.contains(request.auth.uid) && !newLikedBy.contains(request.auth.uid))));
@@ -214,8 +223,8 @@ service cloud.firestore {
       let oldReplies = resource.data.get('repliesCount', 0);
       let newReplies = request.resource.data.get('repliesCount', 0);
       
-      return (affected.hasOnly(['repliesCount']) && newReplies == oldReplies + 1) ||
-             (affected.hasOnly(['likesCount', 'likedBy']) && 
+      return (affected.hasOnly(['repliesCount', 'updatedAt']) && newReplies == oldReplies + 1) ||
+             (affected.hasOnly(['likesCount', 'likedBy', 'updatedAt']) && 
               math.abs(newLikes - oldLikes) == 1 &&
               ((newLikes == oldLikes + 1 && !oldLikedBy.contains(request.auth.uid) && newLikedBy.contains(request.auth.uid)) ||
                (newLikes == oldLikes - 1 && oldLikedBy.contains(request.auth.uid) && !newLikedBy.contains(request.auth.uid))));
@@ -228,13 +237,13 @@ service cloud.firestore {
       let oldFollowing = resource.data.get('followingCount', 0);
       let newFollowing = request.resource.data.get('followingCount', 0);
 
-      return (affected.hasOnly(['followersCount']) && math.abs(newFollowers - oldFollowers) == 1) ||
-             (affected.hasOnly(['followingCount']) && math.abs(newFollowing - oldFollowing) == 1 && isOwner(userId));
+      return (affected.hasOnly(['followersCount', 'updatedAt']) && math.abs(newFollowers - oldFollowers) == 1) ||
+             (affected.hasOnly(['followingCount', 'updatedAt']) && math.abs(newFollowing - oldFollowing) == 1 && isOwner(userId));
     }
 
     function isValidBooking() {
       let data = request.resource.data;
-      return hasOnlyAllowedFields(['serviceId', 'serviceTitle', 'userId', 'userName', 'date', 'time', 'guests', 'status', 'createdAt', 'providerId']) &&
+      return hasOnlyAllowedFields(['serviceId', 'serviceTitle', 'userId', 'userName', 'date', 'time', 'guests', 'status', 'createdAt', 'providerId', 'paymentStatus', 'amount']) &&
              data.serviceId is string &&
              data.serviceTitle is string &&
              data.userId is string &&
@@ -244,7 +253,9 @@ service cloud.firestore {
              (!('guests' in data) || data.guests is number) &&
              data.status in ['pending', 'confirmed', 'cancelled'] &&
              data.createdAt is string &&
-             data.providerId is string;
+             data.providerId is string &&
+             (!('paymentStatus' in data) || data.paymentStatus is string) &&
+             (!('amount' in data) || data.amount is string);
     }
 
     // ===============================================================
@@ -257,7 +268,7 @@ service cloud.firestore {
       
       // Users can create their own profile. Only admins can create admin roles.
       allow create: if isAuthenticated() && isValidUser() && 
-                    ((isOwner(userId) && request.resource.data.role == 'user') || isAdmin());
+                    ((isOwner(userId) && request.resource.data.role == 'user' && request.resource.data.get('followersCount', 0) == 0 && request.resource.data.get('followingCount', 0) == 0) || isAdmin());
                     
       // Users can update their own profile, but cannot change their role.
       allow update: if isAuthenticated() && (
@@ -376,11 +387,11 @@ service cloud.firestore {
     }
 
     match /bookings/{bookingId} {
-      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || resource.data.providerId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && (isBookingOwner() || isBookingProvider() || isAdmin());
       allow create: if isAuthenticated() && isValidBooking() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && (
-                      (isOwner(resource.data.userId) && request.resource.data.status == 'cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
-                      (resource.data.providerId == request.auth.uid && request.resource.data.status in ['pending', 'confirmed', 'cancelled'] && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
+                      (isBookingOwner() && request.resource.data.status == 'cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
+                      (isBookingProvider() && request.resource.data.status in ['pending', 'confirmed', 'cancelled'] && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
                       isAdmin()
                     );
       allow delete: if isAdmin();

@@ -95,8 +95,8 @@ export default function ChatRoom({ chatId, onBack }: ChatRoomProps) {
 
   if (!chatDetails || !user) {
     return (
-      <div className="h-full w-full flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
+      <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-electric-blue"></div>
       </div>
     );
   }
@@ -105,23 +105,23 @@ export default function ChatRoom({ chatId, onBack }: ChatRoomProps) {
   const otherUser = chatDetails.participantDetails[otherUserId];
 
   return (
-    <div className="h-full w-full bg-slate-50 flex flex-col relative">
+    <div className="h-full w-full bg-slate-50 dark:bg-slate-950 flex flex-col relative">
       {/* Header */}
-      <div className="bg-white px-4 py-3 border-b border-slate-100 flex items-center gap-3 sticky top-0 z-10 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 sticky top-0 z-10 shadow-sm">
         <button 
           onClick={onBack}
-          className="p-2 -ml-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+          className="p-2 -ml-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
         >
           <ArrowLeft size={20} />
         </button>
         <button 
           onClick={() => openProfile(otherUserId)}
-          className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-200 hover:ring-2 hover:ring-sky-500 transition-all"
+          className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-electric-blue transition-all"
         >
           {otherUser?.photoURL ? (
             <img src={otherUser.photoURL} alt={otherUser.displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-slate-400">
+            <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500">
               <UserIcon size={20} />
             </div>
           )}
@@ -129,18 +129,23 @@ export default function ChatRoom({ chatId, onBack }: ChatRoomProps) {
         <div className="flex-1 min-w-0">
           <button 
             onClick={() => openProfile(otherUserId)}
-            className="text-base font-bold text-slate-800 truncate hover:underline text-left flex items-center gap-1.5"
+            className="text-base font-bold text-slate-800 dark:text-white truncate hover:underline text-left flex items-center gap-1.5"
           >
             {otherUser?.displayName || 'User'}
             {otherUser?.role === 'admin' && (
-              <BadgeCheck className="text-blue-500 flex-shrink-0" size={16} fill="currentColor" stroke="white" />
+              <BadgeCheck className="text-electric-blue flex-shrink-0" size={16} fill="currentColor" stroke="white" />
+            )}
+            {otherUser?.role && otherUser.role !== 'user' && (
+              <span className="ml-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                {otherUser.role}
+              </span>
             )}
           </button>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-40">
         {messages.length === 0 ? (
           <div className="text-center py-12 text-slate-400 text-sm">
             Start a conversation with {otherUser?.displayName || 'this user'}
@@ -161,8 +166,8 @@ export default function ChatRoom({ chatId, onBack }: ChatRoomProps) {
                 <div 
                   className={`max-w-[75%] px-4 py-2.5 rounded-2xl ${
                     isMe 
-                      ? 'bg-sky-600 text-white rounded-tr-sm' 
-                      : 'bg-white text-slate-800 border border-slate-100 shadow-sm rounded-tl-sm'
+                      ? 'bg-electric-blue text-white rounded-tr-sm' 
+                      : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-800 shadow-sm rounded-tl-sm'
                   }`}
                 >
                   <p className="text-sm break-words whitespace-pre-wrap">{msg.text}</p>
@@ -175,19 +180,19 @@ export default function ChatRoom({ chatId, onBack }: ChatRoomProps) {
       </div>
 
       {/* Input */}
-      <div className="absolute bottom-[72px] left-0 right-0 bg-white border-t border-slate-100 p-3">
+      <div className="absolute bottom-[calc(env(safe-area-inset-bottom)+88px)] sm:bottom-[88px] left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 p-3">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2 max-w-3xl mx-auto">
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+            className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue/20 focus:border-electric-blue dark:text-white transition-all"
           />
           <button
             type="submit"
             disabled={!newMessage.trim()}
-            className="bg-sky-600 text-white p-2.5 rounded-full hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+            className="bg-electric-blue text-white p-2.5 rounded-full hover:bg-electric-blue-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
             <Send size={18} className="ml-0.5" />
           </button>
