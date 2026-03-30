@@ -2,8 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageCircle, X, Send, Bot, Loader2, Sparkles, HelpCircle } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
+import { getWeatherData } from '../../services/apiServices';
+import { collection, query, getDocs, where } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 
-const SYSTEM_INSTRUCTION = `You are GiliBot, the ultimate AI travel expert for Gili Trawangan, Indonesia. 🌴
+const BASE_SYSTEM_INSTRUCTION = `You are GiliBot, the ultimate AI travel expert for Gili Trawangan, Indonesia. 🌴
 Your goal is to provide accurate, helpful, and "island-vibey" advice to travelers.
 
 Key Knowledge Base:
@@ -26,9 +29,37 @@ export default function GiliBot() {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [context, setContext] = useState<string>('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const chatRef = useRef<any>(null);
+
+  const fetchContext = async () => {
+    try {
+      const [weather, eventsSnapshot] = await Promise.all([
+        getWeatherData(),
+        getDocs(query(collection(db, 'events'), where('date', '==', new Date().toISOString().split('T')[0])))
+      ]);
+
+      const events = eventsSnapshot.docs.map(doc => doc.data().title).join(', ');
+      const weatherInfo = weather ? `${weather.main.temp}°C, ${weather.weather[0].description}` : 'Unknown';
+      
+      setContext(`
+CURRENT ISLAND CONTEXT:
+- Weather Today: ${weatherInfo}
+- Events Today: ${events || 'No major events scheduled yet'}
+- Time: ${new Date().toLocaleTimeString()}
+`);
+    } catch (err) {
+      console.error('Context fetch error:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchContext();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -55,14 +86,15 @@ export default function GiliBot() {
 
       const ai = new GoogleGenAI({ apiKey });
       
-      if (!chatRef.current) {
-        chatRef.current = ai.chats.create({
-          model: "gemini-3-flash-preview",
-          config: {
-            systemInstruction: SYSTEM_INSTRUCTION,
-          }
-        });
-      }
+      // Re-create chat with updated context
+      const fullInstruction = `${BASE_SYSTEM_INSTRUCTION}\n\n${context}`;
+      
+      chatRef.current = ai.chats.create({
+        model: "gemini-3-flash-preview",
+        config: {
+          systemInstruction: fullInstruction,
+        }
+      });
 
       const response = await chatRef.current.sendMessage({ message: userMessage });
       const botText = response.text || "Sorry, I'm having a bit of island brain fog. Can you try again? 🥥";

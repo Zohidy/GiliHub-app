@@ -126,7 +126,7 @@ export default function PublicProfileModal() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16">
               <Loader2 size={40} className="animate-spin text-electric-blue mb-4" />
-              <p className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Loading profile...</p>
+              <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Loading profile...</p>
             </div>
           ) : profileData ? (
             <>
@@ -143,7 +143,7 @@ export default function PublicProfileModal() {
                   <button
                     onClick={handleFollowToggle}
                     disabled={followLoading}
-                    className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 shadow-lg ${
+                    className={`px-6 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 shadow-lg ${
                       isFollowing 
                         ? 'glass dark:glass-dark text-slate-700 dark:text-slate-300 hover:bg-rose-500 hover:text-white border-white/20' 
                         : 'bg-electric-blue text-white hover:bg-electric-blue-dark shadow-electric-blue/20'
@@ -167,7 +167,7 @@ export default function PublicProfileModal() {
               </div>
 
               <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{profileData.displayName}</h3>
+                <h3 className="text-2xl font-display font-semibold text-slate-900 dark:text-white tracking-tight">{profileData.displayName}</h3>
                 {profileData.role === 'admin' && (
                   <BadgeCheck className="text-electric-blue" size={24} fill="currentColor" stroke="white" />
                 )}
@@ -180,24 +180,24 @@ export default function PublicProfileModal() {
               {profileData.interests && profileData.interests.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-6">
                   {profileData.interests.map((interest: string) => (
-                    <span key={interest} className="text-[10px] font-black uppercase tracking-widest bg-electric-blue/10 dark:bg-electric-blue/20 text-electric-blue dark:text-electric-blue-light px-3 py-1.5 rounded-xl border border-electric-blue/20">{interest}</span>
+                    <span key={interest} className="text-[10px] font-bold uppercase tracking-widest bg-electric-blue/10 dark:bg-electric-blue/20 text-electric-blue dark:text-electric-blue-light px-3 py-1.5 rounded-xl border border-electric-blue/20">{interest}</span>
                   ))}
                 </div>
               )}
               
               <div className="flex gap-8 mt-6 pt-6 border-t border-white/10 dark:border-white/5">
                 <div className="flex flex-col">
-                  <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{profileData.followersCount || 0}</span>
-                  <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 dark:text-slate-500">Followers</span>
+                  <span className="text-2xl font-display font-semibold text-slate-900 dark:text-white tracking-tight">{profileData.followersCount || 0}</span>
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400 dark:text-slate-500">Followers</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{profileData.followingCount || 0}</span>
-                  <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 dark:text-slate-500">Following</span>
+                  <span className="text-2xl font-display font-semibold text-slate-900 dark:text-white tracking-tight">{profileData.followingCount || 0}</span>
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400 dark:text-slate-500">Following</span>
                 </div>
               </div>
             </>
           ) : (
-            <div className="py-12 text-center text-slate-500 font-black uppercase tracking-widest text-xs">Profile not available</div>
+            <div className="py-12 text-center text-slate-500 font-bold uppercase tracking-widest text-xs">Profile not available</div>
           )}
         </div>
       </div>

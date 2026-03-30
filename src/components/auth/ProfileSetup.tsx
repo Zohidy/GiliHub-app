@@ -86,11 +86,11 @@ export default function ProfileSetup() {
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md">
                 <User size={24} />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tighter leading-tight mb-4">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tighter leading-tight mb-4">
                 TELL US <br /> ABOUT <br /> YOU.
               </h2>
               <p className="text-electric-blue-light text-sm font-medium leading-relaxed">
-                Welcome to GiliHub! This quick setup helps you get started. Once you're done, you can explore the island, book experiences, and join our community.
+                Welcome to GiliHub! We're thrilled to have you. This quick setup helps us personalize your island experience. Once you're done, you'll be ready to explore, book, and connect with the Gili community.
               </p>
             </div>
             <div className="mt-8 pt-8 border-t border-white/10">
@@ -136,7 +136,7 @@ export default function ProfileSetup() {
               <div className="space-y-4">
                 {/* Display Name */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Your Name</label>
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Your Name</label>
                   <div className="relative group">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-electric-blue transition-colors" size={18} />
                     <input 
@@ -152,7 +152,7 @@ export default function ProfileSetup() {
 
                 {/* Country */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Where are you from?</label>
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Where are you from?</label>
                   <div className="relative group">
                     <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-electric-blue transition-colors" size={18} />
                     <select 
@@ -169,7 +169,7 @@ export default function ProfileSetup() {
 
                 {/* Gender */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Gender (Optional)</label>
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Gender (Optional)</label>
                   <div className="flex flex-wrap gap-2">
                     {genders.map(g => (
                       <button
@@ -190,7 +190,7 @@ export default function ProfileSetup() {
 
                 {/* Bio */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Short Bio</label>
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Short Bio</label>
                   <textarea 
                     value={formData.bio}
                     onChange={(e) => setFormData({...formData, bio: e.target.value})}

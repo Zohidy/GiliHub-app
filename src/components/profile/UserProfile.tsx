@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { User, Mail, Shield, Calendar, LogOut, Edit2, Check, X, Loader2, AlertTriangle, Link as LinkIcon, Settings, ChevronRight, BadgeCheck, Plus, Trash2, Twitter, Instagram, Facebook, Linkedin, Github, RefreshCw } from 'lucide-react';
-import { doc, updateDoc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { User, Mail, Shield, Calendar, LogOut, Edit2, Check, X, Loader2, AlertTriangle, Link as LinkIcon, Settings, ChevronRight, BadgeCheck, Plus, Trash2, Twitter, Instagram, Facebook, Linkedin, Github, RefreshCw, Compass, Clock, MapPin } from 'lucide-react';
+import { doc, updateDoc, getDoc, setDoc, deleteDoc, collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorHandler';
 import { toast } from 'sonner';
 
 interface UserProfileProps {
-  setActiveTab?: (tab: 'home' | 'map' | 'booking' | 'events' | 'forum' | 'chat' | 'profile' | 'about' | 'settings' | 'privacy' | 'terms') => void;
+  setActiveTab?: (tab: 'home' | 'map' | 'booking' | 'events' | 'forum' | 'chat' | 'profile' | 'about' | 'settings' | 'privacy' | 'terms' | 'planner') => void;
 }
 
 export default function UserProfile({ setActiveTab }: UserProfileProps) {
@@ -22,6 +22,40 @@ export default function UserProfile({ setActiveTab }: UserProfileProps) {
   const [editSocialLinks, setEditSocialLinks] = useState<{ platform: string, url: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
+  
+  const [myTrips, setMyTrips] = useState<any[]>([]);
+  const [myBookings, setMyBookings] = useState<any[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const tripsQuery = query(
+      collection(db, 'trips'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const bookingsQuery = query(
+      collection(db, 'bookings'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribeTrips = onSnapshot(tripsQuery, (snapshot) => {
+      setMyTrips(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    const unsubscribeBookings = onSnapshot(bookingsQuery, (snapshot) => {
+      setMyBookings(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setIsLoadingData(false);
+    });
+
+    return () => {
+      unsubscribeTrips();
+      unsubscribeBookings();
+    };
+  }, [user]);
 
   if (!userData) {
     return (
@@ -194,7 +228,7 @@ export default function UserProfile({ setActiveTab }: UserProfileProps) {
 
       <div className="mb-8 flex justify-between items-end relative z-10">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">My Profile</h2>
+          <h2 className="text-2xl sm:text-3xl font-display font-semibold text-slate-900 dark:text-white tracking-tight uppercase">My Profile</h2>
           <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest">Manage your account</p>
         </div>
       </div>
@@ -331,6 +365,108 @@ export default function UserProfile({ setActiveTab }: UserProfileProps) {
               )}
             </div>
           )}
+        </div>
+
+        {/* My Activity Sections */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {/* My Trips Summary */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-600 dark:text-indigo-400">
+                  <Compass size={18} />
+                </div>
+                <h4 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">My Trips</h4>
+              </div>
+              <button 
+                onClick={() => setActiveTab?.('planner')}
+                className="p-1 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-400"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {myTrips.length > 0 ? (
+                myTrips.slice(0, 2).map((trip) => (
+                  <div key={trip.id} className="flex items-center gap-3 p-3 bg-slate-50/50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                      <MapPin size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">{trip.title}</h4>
+                      <p className="text-[9px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest">{trip.dates}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 italic">No trips planned yet.</p>
+                  <button 
+                    onClick={() => setActiveTab?.('planner')}
+                    className="mt-2 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:underline"
+                  >
+                    Start Planning
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* My Bookings Summary */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400">
+                  <Calendar size={18} />
+                </div>
+                <h4 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">My Bookings</h4>
+              </div>
+              <button 
+                onClick={() => setActiveTab?.('booking')}
+                className="p-1 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-400"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {myBookings.length > 0 ? (
+                myBookings.slice(0, 2).map((booking) => (
+                  <div key={booking.id} className="flex items-center gap-3 p-3 bg-slate-50/50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      booking.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-600' : 
+                      booking.status === 'cancelled' ? 'bg-rose-500/20 text-rose-600' : 'bg-amber-500/20 text-amber-600'
+                    }`}>
+                      <Clock size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">{booking.serviceTitle}</h4>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[8px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">{booking.date}</span>
+                        <span className={`text-[7px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-widest ${
+                          booking.status === 'confirmed' ? 'bg-emerald-500/10 text-emerald-600' : 
+                          booking.status === 'cancelled' ? 'bg-rose-500/10 text-rose-600' : 'bg-amber-500/10 text-amber-600'
+                        }`}>
+                          {booking.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 italic">No bookings found.</p>
+                  <button 
+                    onClick={() => setActiveTab?.('booking')}
+                    className="mt-2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest hover:underline"
+                  >
+                    Explore Services
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

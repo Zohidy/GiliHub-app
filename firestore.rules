@@ -89,13 +89,48 @@ service cloud.firestore {
 
     function isValidLocation() {
       let data = request.resource.data;
-      return hasOnlyAllowedFields(['name', 'type', 'position', 'desc', 'createdBy', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['name', 'type', 'lat', 'lng', 'desc', 'createdBy', 'createdAt', 'updatedAt']) &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
              data.type in ["sunset", "clinic", "police", "bike", "snorkeling", "port", "restaurant", "diving"] &&
-             data.position is list && data.position.size() == 2 &&
-             data.position[0] is number && data.position[1] is number &&
+             data.lat is number && data.lng is number &&
              data.desc is string && data.desc.size() <= 500 &&
              data.createdBy is string &&
+             data.createdAt is string &&
+             (!('updatedAt' in data) || data.updatedAt is string);
+    }
+
+    function isValidReview() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['targetId', 'targetType', 'userId', 'userName', 'userPhoto', 'rating', 'comment', 'createdAt']) &&
+             data.targetId is string &&
+             data.targetType in ["service", "location", "event", "island"] &&
+             data.userId == request.auth.uid &&
+             data.userName is string && data.userName.size() > 0 && data.userName.size() < 100 &&
+             (!('userPhoto' in data) || data.userPhoto == null || (data.userPhoto is string && data.userPhoto.size() < 2000)) &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() > 0 && data.comment.size() <= 1000 &&
+             data.createdAt is string;
+    }
+
+    function isValidFavorite() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['userId', 'targetId', 'targetType', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.targetId is string &&
+             data.targetType in ["service", "location", "event"] &&
+             data.createdAt is string;
+    }
+
+    function isValidTrip() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['userId', 'title', 'dates', 'activities', 'accommodation', 'itinerary', 'createdAt', 'updatedAt']) &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 100 &&
+             (!('dates' in data) || data.dates is string) &&
+             (!('activities' in data) || data.activities is string) &&
+             (!('accommodation' in data) || data.accommodation is string) &&
+             data.itinerary is map &&
+             data.createdAt is string &&
              (!('updatedAt' in data) || data.updatedAt is string);
     }
 
@@ -420,6 +455,32 @@ service cloud.firestore {
                     followId == request.resource.data.followerId + '_' + request.resource.data.followingId;
       allow delete: if isAuthenticated() && resource.data.followerId == request.auth.uid;
       allow update: if false;
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidReview();
+      allow update: if isAuthenticated() && isValidReview() && isOwner(resource.data.userId) &&
+                    request.resource.data.targetId == resource.data.targetId &&
+                    request.resource.data.targetType == resource.data.targetType &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    match /favorites/{favoriteId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidFavorite() && 
+                    favoriteId == request.auth.uid + '_' + request.resource.data.targetId;
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+      allow update: if false;
+    }
+
+    match /trips/{tripId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidTrip();
+      allow update: if isAuthenticated() && isValidTrip() && (isOwner(resource.data.userId) || isAdmin()) &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
     }
   }
 }

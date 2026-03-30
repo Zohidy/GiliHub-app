@@ -136,7 +136,7 @@ export default function ChatRoom({ chatId, onBack }: ChatRoomProps) {
               <BadgeCheck className="text-electric-blue flex-shrink-0" size={16} fill="currentColor" stroke="white" />
             )}
             {otherUser?.role && otherUser.role !== 'user' && (
-              <span className="ml-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+              <span className="ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                 {otherUser.role}
               </span>
             )}

@@ -22,7 +22,7 @@ export default function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
           <ChevronLeft size={24} />
         </button>
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Privacy Policy</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight uppercase">Privacy Policy</h1>
           <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">How we protect your data</p>
         </div>
       </div>

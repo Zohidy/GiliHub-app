@@ -173,7 +173,7 @@ export default function Login() {
             <div className="w-10 h-10 bg-electric-blue rounded-xl flex items-center justify-center shadow-lg shadow-electric-blue/20">
               <Logo className="text-white" size={24} />
             </div>
-            <span className="text-2xl font-black text-white tracking-tighter">GiliHub</span>
+            <span className="text-2xl font-bold text-white tracking-tighter">GiliHub</span>
           </motion.div>
 
           <div className="mt-20 space-y-2">
@@ -181,7 +181,7 @@ export default function Login() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-5xl sm:text-6xl font-black text-white leading-[0.9] tracking-tighter"
+              className="text-5xl sm:text-6xl font-bold text-white leading-[0.9] tracking-tighter"
             >
               EXPLORE THE <br />
               <span className="text-electric-blue">ISLAND LIFE.</span>
@@ -234,7 +234,7 @@ export default function Login() {
           <div className="w-8 h-8 bg-electric-blue rounded-lg flex items-center justify-center shadow-lg shadow-electric-blue/20">
             <Logo className="text-white" size={18} />
           </div>
-          <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">GiliHub</span>
+          <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tighter">GiliHub</span>
         </div>
 
         <motion.div 
@@ -248,8 +248,12 @@ export default function Login() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
-                {authMode === 'anonymous' ? 'Welcome to GiliHub! Explore the island as a guest.' : isLogin ? 'Welcome back! Ready for more island adventures?' : 'Join the GiliHub community! Let\'s start your island adventure.'}
+              <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tighter leading-none">
+                {authMode === 'anonymous' 
+                  ? 'Welcome to GiliHub! Explore the island as our guest.' 
+                  : isLogin 
+                    ? 'Welcome back! Ready for your next Gili adventure?' 
+                    : 'Join GiliHub! Your journey to paradise starts here.'}
               </h2>
               <p className="text-slate-500 dark:text-slate-400 mt-3 font-medium">
                 {authMode === 'anonymous' 

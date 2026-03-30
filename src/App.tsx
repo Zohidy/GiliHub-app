@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import TripPlanner from './components/planner/TripPlanner';
 import Home from './components/home/Home';
 import InteractiveMap from './components/map/InteractiveMap';
 import BookingList from './components/booking/BookingList';
@@ -15,35 +16,72 @@ import ProfileSetup from './components/auth/ProfileSetup';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ProfileModalProvider } from './contexts/ProfileModalContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { UIProvider, useUI } from './contexts/UIContext';
+import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
+import { db } from './config/firebase';
 import PublicProfileModal from './components/profile/PublicProfileModal';
 import GiliBot from './components/chat/GiliBot';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LogOut, User, MessageCircle, Calendar, Map as MapIcon, CalendarDays, MessageSquare, UserCircle, LayoutGrid, Sun, Moon, Home as HomeIcon, ChevronLeft, Loader2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Logo } from './components/Logo';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 
 function MainApp() {
   const { user, userData, loading, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   const { isBottomNavVisible } = useUI();
-  const [activeTab, setActiveTab] = useState<'home' | 'map' | 'booking' | 'events' | 'forum' | 'chat' | 'profile' | 'about' | 'settings' | 'privacy' | 'terms'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'map' | 'booking' | 'events' | 'forum' | 'chat' | 'profile' | 'about' | 'settings' | 'privacy' | 'terms' | 'planner'>('home');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast.success(t('online_mode') || 'Back online!');
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.error(t('offline_mode') || 'Offline mode activated');
+    };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // Real-time Notifications for Forum
+    let unsubscribeForum: () => void;
+    if (user) {
+      const q = query(
+        collection(db, 'comments'),
+        orderBy('createdAt', 'desc'),
+        limit(1)
+      );
+      
+      unsubscribeForum = onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty && !snapshot.metadata.hasPendingWrites) {
+          const newComment = snapshot.docs[0].data();
+          // Only notify if it's not the current user's comment
+          if (newComment.userId !== user.uid) {
+            toast.info(`New comment from ${newComment.userName}`, {
+              description: newComment.content.substring(0, 50) + '...',
+              action: {
+                label: 'View',
+                onClick: () => setActiveTab('forum')
+              }
+            });
+          }
+        }
+      });
+    }
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      if (unsubscribeForum) unsubscribeForum();
     };
-  }, []);
+  }, [t, user]);
 
   // Back button logic
   useEffect(() => {
@@ -99,7 +137,7 @@ function MainApp() {
             </div>
             <div className="absolute -inset-4 border-2 border-electric-blue/20 rounded-full animate-spin-slow" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">GILIHUB</h1>
+          <h1 className="text-3xl sm:text-4xl font-display font-semibold text-slate-900 dark:text-white tracking-tight mb-2">GILIHUB</h1>
           <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
             <Loader2 className="animate-spin" size={16} />
             <span className="text-sm uppercase tracking-[0.2em]">Preparing your island escape...</span>
@@ -138,18 +176,26 @@ function MainApp() {
   return (
     <div className="flex flex-col h-screen w-full bg-mesh overflow-hidden font-sans transition-colors duration-300">
       {/* Header */}
-      <header className="glass dark:glass-dark px-4 sm:px-6 py-3 z-30 flex justify-between items-center sticky top-0 rounded-b-3xl mx-2 mt-2 shadow-2xl">
+      <header className="glass dark:glass-dark px-4 sm:px-6 py-3 z-30 flex justify-between items-center sticky top-0 rounded-b-3xl mx-2 mt-2 shadow-lg border-b border-white/40 dark:border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-electric-blue rounded-xl flex items-center justify-center shadow-lg shadow-electric-blue/20">
-            <Logo className="text-white" size={20} />
+          <div className="w-9 h-9 bg-electric-blue rounded-full flex items-center justify-center shadow-md shadow-electric-blue/20">
+            <Logo className="text-white" size={18} />
           </div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">GiliHub</h1>
+          <h1 className="text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight">GiliHub</h1>
         </div>
         
         <div className="flex items-center gap-1.5">
           <button 
+            onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
+            className="p-2 text-slate-500 dark:text-slate-400 hover:text-electric-blue dark:hover:text-electric-blue hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all font-bold text-[10px] uppercase tracking-widest"
+            title="Toggle Language"
+          >
+            {language === 'id' ? 'ID' : 'EN'}
+          </button>
+          
+          <button 
             onClick={toggleTheme}
-            className="p-2 text-slate-500 dark:text-slate-400 hover:text-electric-blue dark:hover:text-electric-blue hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+            className="p-2 text-slate-500 dark:text-slate-400 hover:text-electric-blue dark:hover:text-electric-blue hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all"
             title="Toggle Theme"
           >
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
@@ -159,12 +205,12 @@ function MainApp() {
 
           <div className="flex items-center gap-2 pl-1">
             <div className="hidden sm:flex flex-col items-end">
-              <span className="text-xs font-black text-slate-900 dark:text-white tracking-tight leading-none">{userData?.displayName}</span>
-              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">{userData?.role || 'User'}</span>
+              <span className="text-xs font-bold text-slate-900 dark:text-white tracking-tight leading-none">{userData?.displayName}</span>
+              <span className="text-[9px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">{userData?.role || 'User'}</span>
             </div>
             <button 
               onClick={() => setActiveTab('profile')}
-              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-700 overflow-hidden shadow-sm hover:ring-2 hover:ring-electric-blue/20 transition-all"
+              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-700 overflow-hidden shadow-sm hover:ring-2 hover:ring-electric-blue/30 transition-all"
             >
               {userData?.photoURL ? (
                 <img src={userData.photoURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -176,7 +222,7 @@ function MainApp() {
             </button>
             <button 
               onClick={signOut}
-              className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all group"
+              className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-full transition-all group"
               title="Sign Out"
             >
               <LogOut size={18} className="group-hover:-translate-x-0.5 transition-transform" />
@@ -202,6 +248,7 @@ function MainApp() {
             {activeTab === 'events' && <EventCalendar />}
             {activeTab === 'forum' && <ForumList />}
             {activeTab === 'chat' && <ChatList />}
+            {activeTab === 'planner' && <TripPlanner />}
             {activeTab === 'profile' && <UserProfile setActiveTab={setActiveTab} />}
             {activeTab === 'about' && <About onBack={() => setActiveTab('settings')} />}
             {activeTab === 'settings' && <Settings onBack={() => setActiveTab('profile')} setActiveTab={setActiveTab} />}
@@ -220,7 +267,7 @@ function MainApp() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="glass dark:glass-dark px-2 py-2 flex justify-around items-center shadow-2xl rounded-[2rem] pointer-events-auto w-full max-w-md border border-white/40 dark:border-white/10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl"
+              className="glass dark:glass-dark px-2 py-2 flex justify-around items-center shadow-xl rounded-full pointer-events-auto w-full max-w-md border border-white/40 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl"
             >
               <NavButton 
                 active={activeTab === 'home'} 
@@ -251,6 +298,12 @@ function MainApp() {
                 onClick={() => setActiveTab('forum')} 
                 icon={<MessageSquare size={22} strokeWidth={activeTab === 'forum' ? 2.5 : 2} />} 
                 label="Forum" 
+              />
+              <NavButton 
+                active={activeTab === 'planner'} 
+                onClick={() => setActiveTab('planner')} 
+                icon={<Calendar size={22} strokeWidth={activeTab === 'planner' ? 2.5 : 2} />} 
+                label="Planner" 
               />
               <NavButton 
                 active={activeTab === 'chat'} 
@@ -295,7 +348,7 @@ function MainApp() {
                 </button>
               </div>
               
-              <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
+              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white tracking-tight mb-2">
                 Exit Application?
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
@@ -335,14 +388,14 @@ function NavButton({ active, onClick, icon, label }: NavButtonProps) {
   return (
     <button 
       onClick={onClick}
-      className={`flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all relative group ${
+      className={`flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full transition-all relative group ${
         active 
-          ? 'text-electric-blue dark:text-electric-blue bg-electric-blue/10 dark:bg-electric-blue/20' 
-          : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+          ? 'text-white bg-electric-blue shadow-lg shadow-electric-blue/30 scale-110' 
+          : 'text-slate-500 dark:text-slate-400 hover:text-electric-blue dark:hover:text-electric-blue-light hover:bg-slate-100 dark:hover:bg-slate-800/50'
       }`}
     >
       <motion.div 
-        animate={{ y: active ? -2 : 0 }}
+        animate={{ y: active ? -8 : 0 }}
         className="relative z-10"
       >
         {icon}
@@ -353,7 +406,7 @@ function NavButton({ active, onClick, icon, label }: NavButtonProps) {
             initial={{ opacity: 0, y: 5, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 5, scale: 0.8 }}
-            className="text-[9px] font-bold tracking-wide absolute bottom-1.5"
+            className="text-[9px] font-bold tracking-wide absolute bottom-2"
           >
             {label}
           </motion.span>
@@ -367,15 +420,17 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <ThemeProvider>
-          <UIProvider>
-            <ProfileModalProvider>
-              <MainApp />
-              <PublicProfileModal />
-              <Toaster position="top-center" richColors />
-            </ProfileModalProvider>
-          </UIProvider>
-        </ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <UIProvider>
+              <ProfileModalProvider>
+                <MainApp />
+                <PublicProfileModal />
+                <Toaster position="top-center" richColors />
+              </ProfileModalProvider>
+            </UIProvider>
+          </ThemeProvider>
+        </LanguageProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

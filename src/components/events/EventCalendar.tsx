@@ -3,39 +3,13 @@ import { collection, query, onSnapshot, addDoc, deleteDoc, doc, orderBy, updateD
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleFirestoreError, OperationType } from '../../utils/firestoreErrorHandler';
-import { Calendar as CalendarIcon, Plus, X, Clock, MapPin, User, Tag, Trash2, Image as ImageIcon, Map as MapIcon, List, Share2, RefreshCw, Edit2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, X, Clock, MapPin, User, Tag, Trash2, Image as ImageIcon, Share2, RefreshCw, Edit2, Navigation } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 
 import { toast } from 'sonner';
 import ConfirmModal from '../ui/ConfirmModal';
 
-// Fix Leaflet icons
-// @ts-ignore
-import icon from 'leaflet/dist/images/marker-icon.png';
-// @ts-ignore
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-const DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34]
-});
-
 const GILI_T_CENTER: [number, number] = [-8.3525, 116.0383];
-
-function MapPicker({ onPick }: { onPick: (latlng: [number, number]) => void }) {
-  useMapEvents({
-    click(e) {
-      onPick([e.latlng.lat, e.latlng.lng]);
-    },
-  });
-  return null;
-}
 
 export default function EventCalendar() {
   const { user, userData } = useAuth();
@@ -45,7 +19,6 @@ export default function EventCalendar() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{isOpen: boolean, id: string}>({ isOpen: false, id: '' });
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
 
@@ -303,6 +276,11 @@ export default function EventCalendar() {
     }
   };
 
+  const handleOpenInGoogleMaps = (lat: number, lng: number) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    window.open(url, '_blank');
+  };
+
   const getOrdinal = (n: number) => {
     const s = ["th", "st", "nd", "rd"];
     const v = n % 100;
@@ -331,17 +309,10 @@ export default function EventCalendar() {
       <div className="glass dark:glass-dark px-4 py-4 sticky top-0 z-10 shadow-xl border-b border-white/20 dark:border-white/10 backdrop-blur-xl">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Event Calendar</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight uppercase">Event Calendar</h2>
             <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">Discover what's happening in Gili</p>
           </div>
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setViewMode(viewMode === 'list' ? 'map' : 'list')}
-              className="glass dark:glass-dark text-slate-600 dark:text-slate-300 p-3 rounded-2xl transition-all active:scale-95 border border-white/20 shadow-lg"
-              title={viewMode === 'list' ? 'Switch to Map' : 'Switch to List'}
-            >
-              {viewMode === 'list' ? <MapIcon size={20} /> : <List size={20} />}
-            </button>
             <button 
               onClick={() => setIsModalOpen(true)}
               className="bg-electric-blue hover:bg-electric-blue-dark text-white p-3 rounded-2xl transition-all shadow-xl shadow-electric-blue/20 active:scale-95 border border-white/20"
@@ -357,7 +328,7 @@ export default function EventCalendar() {
             <button
               key={cat.id}
               onClick={() => setFilterCategory(cat.id)}
-              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
+              className={`px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all border ${
                 filterCategory === cat.id 
                   ? 'bg-electric-blue text-white border-electric-blue-dark shadow-xl shadow-electric-blue/20' 
                   : 'glass dark:glass-dark text-slate-500 dark:text-slate-400 border-white/20 dark:border-white/10 hover:bg-white/10'
@@ -381,16 +352,8 @@ export default function EventCalendar() {
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Loading events...</p>
           </div>
         ) : (
-          <AnimatePresence mode="wait">
-          {viewMode === 'list' ? (
-            <motion.div 
-              key="list"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="h-full overflow-y-auto p-4 pb-32"
-            >
-              {filteredEvents.length === 0 ? (
+          <div className="h-full overflow-y-auto p-4 pb-32 no-scrollbar">
+            {filteredEvents.length === 0 ? (
                 <div className="text-center py-16 px-4">
                   <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                     <CalendarIcon size={32} className="text-slate-400 dark:text-slate-500" />
@@ -417,7 +380,7 @@ export default function EventCalendar() {
                             referrerPolicy="no-referrer"
                           />
                           <div className="absolute top-4 right-4">
-                            <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg backdrop-blur-md border border-white/20 ${
+                            <span className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg backdrop-blur-md border border-white/20 ${
                               categories.find(c => c.id === event.category)?.color || 'bg-slate-100/80 text-slate-600 dark:bg-slate-800/80 dark:text-slate-300'
                             }`}>
                               {event.category}
@@ -429,7 +392,7 @@ export default function EventCalendar() {
                       <div className="p-6">
                         {!event.imageUrl && (
                           <div className="flex justify-between items-start mb-3">
-                            <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 ${
+                            <span className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-white/10 ${
                               categories.find(c => c.id === event.category)?.color || 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
                             }`}>
                               {event.category}
@@ -437,7 +400,7 @@ export default function EventCalendar() {
                           </div>
                         )}
                         
-                        <h4 className="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">{event.title}</h4>
+                        <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">{event.title}</h4>
                         <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 line-clamp-2 font-medium leading-relaxed">{event.description}</p>
                         
                         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -445,13 +408,13 @@ export default function EventCalendar() {
                             <div className="w-8 h-8 rounded-xl bg-electric-blue/10 flex items-center justify-center">
                               <CalendarIcon size={16} className="text-electric-blue" />
                             </div>
-                            <span className="text-xs font-black uppercase tracking-widest">{new Date(event.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</span>
+                            <span className="text-xs font-bold uppercase tracking-widest">{new Date(event.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</span>
                           </div>
                           <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
                             <div className="w-8 h-8 rounded-xl bg-electric-blue/10 flex items-center justify-center">
                               <Clock size={16} className="text-electric-blue" />
                             </div>
-                            <span className="text-xs font-black uppercase tracking-widest">{event.time}</span>
+                            <span className="text-xs font-bold uppercase tracking-widest">{event.time}</span>
                           </div>
                           {event.recurring && event.recurring.type !== 'none' && (
                             <div className="flex flex-col gap-1 col-span-2 mt-1">
@@ -459,7 +422,7 @@ export default function EventCalendar() {
                                 <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                                   <RefreshCw size={16} className="animate-spin-slow" />
                                 </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                <span className="text-[10px] font-bold uppercase tracking-widest">
                                   Recurring: {event.recurring.type}
                                 </span>
                               </div>
@@ -469,16 +432,27 @@ export default function EventCalendar() {
                             <div className="w-8 h-8 rounded-xl bg-electric-blue/10 flex items-center justify-center">
                               <MapPin size={16} className="text-electric-blue" />
                             </div>
-                            <span className="text-xs font-black uppercase tracking-widest truncate">{event.location}</span>
+                            <span className="text-xs font-bold uppercase tracking-widest truncate">{event.location}</span>
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between pt-6 border-t border-white/10 dark:border-white/5">
+                      <div className="flex flex-col gap-3">
+                        {event.position && (
+                          <button 
+                            onClick={() => handleOpenInGoogleMaps(event.position[0], event.position[1])}
+                            className="w-full bg-electric-blue hover:bg-electric-blue-dark text-white py-3 rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-xl shadow-electric-blue/20 transition-all flex items-center justify-center gap-2 active:scale-95"
+                          >
+                            <Navigation size={14} />
+                            Navigate to Google Maps
+                          </button>
+                        )}
+                        
+                        <div className="flex items-center justify-between pt-4 border-t border-white/10 dark:border-white/5">
                           <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-xl bg-electric-blue/10 dark:bg-electric-blue/20 flex items-center justify-center border border-white/20">
                               <User size={14} className="text-electric-blue dark:text-electric-blue-light" />
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">By {event.organizerName}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">By {event.organizerName}</span>
                           </div>
                           
                           <div className="flex items-center gap-1.5">
@@ -511,56 +485,14 @@ export default function EventCalendar() {
                           </div>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
+                  </motion.div>
                   ))}
                 </div>
               )}
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="map"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="h-full w-full"
-            >
-              <MapContainer 
-                center={GILI_T_CENTER} 
-                zoom={15} 
-                className="w-full h-full z-0"
-                zoomControl={false}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                {filteredEvents.map(event => event.position && (
-                  <Marker 
-                    key={event.id} 
-                    position={event.position as [number, number]}
-                    icon={DefaultIcon}
-                  >
-                    <Popup>
-                      <div className="p-1 min-w-[150px] dark:bg-slate-900 dark:text-white">
-                        <h4 className="font-bold text-slate-800 dark:text-white">{event.title}</h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{event.date} at {event.time}</p>
-                        <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 mb-2">{event.description}</p>
-                        <button 
-                          onClick={() => handleShare(event)}
-                          className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-electric-blue/10 dark:bg-electric-blue/20 text-electric-blue dark:text-electric-blue-light rounded-lg text-[10px] font-bold hover:bg-electric-blue/20 dark:hover:bg-electric-blue/30 transition-colors"
-                        >
-                          <Share2 size={12} /> Share Event
-                        </button>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
 
     {/* Add Event Modal */}
       <AnimatePresence>
@@ -574,7 +506,7 @@ export default function EventCalendar() {
               className="glass dark:glass-dark w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 dark:border-white/10"
             >
               <div className="sticky top-0 glass dark:glass-dark px-6 py-5 border-b border-white/10 flex justify-between items-center z-10">
-                <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tight">{editingEvent ? 'Edit Event' : 'Create Event'}</h3>
+                <h3 className="font-bold text-xl text-slate-900 dark:text-white uppercase tracking-tight">{editingEvent ? 'Edit Event' : 'Create Event'}</h3>
                 <button 
                   onClick={() => {
                     setIsModalOpen(false);
@@ -609,7 +541,7 @@ export default function EventCalendar() {
                 </button>
               </div>              <form onSubmit={handleCreateEvent} className="p-6 space-y-5">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Event Title</label>
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Event Title</label>
                   <input
                     required
                     type="text"
@@ -621,7 +553,7 @@ export default function EventCalendar() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Description</label>
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Description</label>
                   <textarea
                     required
                     rows={3}
@@ -634,7 +566,7 @@ export default function EventCalendar() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Date</label>
+                    <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Date</label>
                     <input
                       required
                       type="date"
@@ -644,7 +576,7 @@ export default function EventCalendar() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Time</label>
+                    <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Time</label>
                     <input
                       required
                       type="text"
@@ -657,7 +589,7 @@ export default function EventCalendar() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Location Name</label>
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Location Name</label>
                   <div className="relative">
                     <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     <input
@@ -672,23 +604,30 @@ export default function EventCalendar() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Pin on Map (Click to set)</label>
-                  <div className="h-44 w-full rounded-2xl overflow-hidden border border-white/10 relative shadow-inner">
-                    <MapContainer 
-                      center={formData.position} 
-                      zoom={14} 
-                      className="h-full w-full z-0"
-                      zoomControl={false}
-                    >
-                      <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                      <MapPicker onPick={(pos) => setFormData({...formData, position: pos})} />
-                      <Marker position={formData.position} icon={DefaultIcon} />
-                    </MapContainer>
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Coordinates (Lat, Lng)</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.position[0]}
+                      onChange={(e) => setFormData({...formData, position: [parseFloat(e.target.value), formData.position[1]]})}
+                      placeholder="Latitude"
+                      className="glass-input dark:glass-input-dark w-full rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue/50 transition-all dark:text-white"
+                    />
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.position[1]}
+                      onChange={(e) => setFormData({...formData, position: [formData.position[0], parseFloat(e.target.value)]})}
+                      placeholder="Longitude"
+                      className="glass-input dark:glass-input-dark w-full rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue/50 transition-all dark:text-white"
+                    />
                   </div>
+                  <p className="text-[9px] text-slate-400 mt-2 ml-1">Tip: Get coordinates from Google Maps by right-clicking a location.</p>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Category</label>
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Category</label>
                   <div className="relative">
                     <Tag size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     <select
@@ -709,7 +648,7 @@ export default function EventCalendar() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 ml-1">Recurring Event</label>
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 ml-1">Recurring Event</label>
                   <div className="bg-white/30 dark:bg-white/5 rounded-[2rem] border border-white/20 dark:border-white/10 overflow-hidden backdrop-blur-sm">
                     {/* Recurrence Type Selector */}
                     <div className="flex p-1.5 bg-white/20 dark:bg-black/20 border-b border-white/10">
@@ -721,7 +660,7 @@ export default function EventCalendar() {
                             ...formData, 
                             recurring: { ...formData.recurring, type: type as any }
                           })}
-                          className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${
+                          className={`flex-1 py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-2xl transition-all ${
                             formData.recurring.type === type
                               ? 'bg-white dark:bg-slate-700 text-electric-blue dark:text-electric-blue-light shadow-lg'
                               : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -742,7 +681,7 @@ export default function EventCalendar() {
                             key="weekly"
                             className="space-y-3"
                           >
-                            <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Repeat on</label>
+                            <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Repeat on</label>
                             <div className="flex flex-wrap gap-2.5">
                               {DAYS_OF_WEEK.map(day => (
                                 <button
@@ -754,7 +693,7 @@ export default function EventCalendar() {
                                       : [...formData.recurring.weeklyDays, day];
                                     setFormData({ ...formData, recurring: { ...formData.recurring, weeklyDays: days } });
                                   }}
-                                  className={`w-11 h-11 rounded-2xl text-[10px] font-black transition-all flex items-center justify-center ${
+                                  className={`w-11 h-11 rounded-2xl text-[10px] font-bold transition-all flex items-center justify-center ${
                                     formData.recurring.weeklyDays.includes(day)
                                       ? 'bg-electric-blue text-white shadow-lg shadow-electric-blue/20'
                                       : 'glass-card dark:glass-card-dark text-slate-500 dark:text-slate-400 border-white/20 dark:border-white/10'
@@ -779,7 +718,7 @@ export default function EventCalendar() {
                               <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, recurring: { ...formData.recurring, monthlyOption: 'date' } })}
-                                className={`py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                className={`py-3 px-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border transition-all ${
                                   formData.recurring.monthlyOption === 'date'
                                     ? 'bg-electric-blue/10 border-electric-blue/50 text-electric-blue dark:text-electric-blue-light shadow-sm'
                                     : 'glass-card dark:glass-card-dark text-slate-500 dark:text-slate-400 border-white/20 dark:border-white/10'
@@ -790,7 +729,7 @@ export default function EventCalendar() {
                               <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, recurring: { ...formData.recurring, monthlyOption: 'dayOfWeek' } })}
-                                className={`py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                className={`py-3 px-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border transition-all ${
                                   formData.recurring.monthlyOption === 'dayOfWeek'
                                     ? 'bg-electric-blue/10 border-electric-blue/50 text-electric-blue dark:text-electric-blue-light shadow-sm'
                                     : 'glass-card dark:glass-card-dark text-slate-500 dark:text-slate-400 border-white/20 dark:border-white/10'
@@ -802,34 +741,34 @@ export default function EventCalendar() {
 
                             {formData.recurring.monthlyOption === 'date' ? (
                               <div className="flex items-center gap-3 bg-white/20 dark:bg-black/20 p-4 rounded-2xl border border-white/10">
-                                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Day</span>
+                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Day</span>
                                 <input 
                                   type="number" 
                                   min="1" 
                                   max="31"
                                   value={formData.recurring.monthlyDate}
                                   onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, monthlyDate: parseInt(e.target.value) } })}
-                                  className="w-20 glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-sm font-black text-slate-700 dark:text-white focus:outline-none"
+                                  className="w-20 glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 dark:text-white focus:outline-none"
                                 />
-                                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">of the month</span>
+                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">of the month</span>
                               </div>
                             ) : (
                               <div className="flex flex-wrap items-center gap-2.5 bg-white/20 dark:bg-black/20 p-4 rounded-2xl border border-white/10">
                                 <select
                                   value={formData.recurring.monthlyWeek}
                                   onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, monthlyWeek: parseInt(e.target.value) } })}
-                                  className="glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-white focus:outline-none"
+                                  className="glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-700 dark:text-white focus:outline-none"
                                 >
                                   {WEEKS.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
                                 </select>
                                 <select
                                   value={formData.recurring.monthlyDay}
                                   onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, monthlyDay: e.target.value } })}
-                                  className="glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-white focus:outline-none"
+                                  className="glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-700 dark:text-white focus:outline-none"
                                 >
                                   {DAYS_OF_WEEK.map(d => <option key={d} value={d}>{d}</option>)}
                                 </select>
-                                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">of the month</span>
+                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">of the month</span>
                               </div>
                             )}
                           </motion.div>
@@ -843,11 +782,11 @@ export default function EventCalendar() {
                             key="yearly"
                             className="flex items-center gap-3 bg-white/20 dark:bg-black/20 p-4 rounded-2xl border border-white/10"
                           >
-                            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Every</span>
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Every</span>
                             <select
                               value={formData.recurring.yearlyMonth}
                               onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, yearlyMonth: parseInt(e.target.value) } })}
-                              className="glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-white focus:outline-none"
+                              className="glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-700 dark:text-white focus:outline-none"
                             >
                               {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
                             </select>
@@ -857,7 +796,7 @@ export default function EventCalendar() {
                               max="31"
                               value={formData.recurring.yearlyDay}
                               onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, yearlyDay: parseInt(e.target.value) } })}
-                              className="w-20 glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-sm font-black text-slate-700 dark:text-white focus:outline-none"
+                              className="w-20 glass-input dark:glass-input-dark border-white/20 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 dark:text-white focus:outline-none"
                             />
                           </motion.div>
                         )}
@@ -865,7 +804,7 @@ export default function EventCalendar() {
 
                       {formData.recurring.type !== 'none' && (
                         <div className="pt-5 border-t border-white/10 space-y-4">
-                          <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">End Recurrence</label>
+                          <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">End Recurrence</label>
                           <div className="grid grid-cols-1 gap-3">
                             <button
                               type="button"
@@ -876,7 +815,7 @@ export default function EventCalendar() {
                                   : 'bg-white/10 border-white/10 text-slate-600 dark:text-slate-400 hover:bg-white/20'
                               }`}
                             >
-                              <span className="text-[10px] font-black uppercase tracking-widest">Never Ends</span>
+                              <span className="text-[10px] font-bold uppercase tracking-widest">Never Ends</span>
                               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                                 formData.recurring.endType === 'never' ? 'border-electric-blue bg-electric-blue' : 'border-white/20'
                               }`}>
@@ -894,7 +833,7 @@ export default function EventCalendar() {
                                 onClick={() => setFormData({ ...formData, recurring: { ...formData.recurring, endType: 'date' } })}
                                 className="flex items-center justify-between w-full"
                               >
-                                <span className="text-[10px] font-black uppercase tracking-widest">Ends on Date</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest">Ends on Date</span>
                                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                                   formData.recurring.endType === 'date' ? 'border-electric-blue bg-electric-blue' : 'border-white/20'
                                 }`}>
@@ -906,7 +845,7 @@ export default function EventCalendar() {
                                   type="date"
                                   value={formData.recurring.endDate}
                                   onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, endDate: e.target.value } })}
-                                  className="w-full glass-input dark:glass-input-dark border-electric-blue/30 rounded-xl px-4 py-2.5 text-xs font-black text-electric-blue dark:text-electric-blue-light focus:outline-none dark:color-scheme-dark"
+                                  className="w-full glass-input dark:glass-input-dark border-electric-blue/30 rounded-xl px-4 py-2.5 text-xs font-bold text-electric-blue dark:text-electric-blue-light focus:outline-none dark:color-scheme-dark"
                                 />
                               )}
                             </div>
@@ -921,7 +860,7 @@ export default function EventCalendar() {
                                 onClick={() => setFormData({ ...formData, recurring: { ...formData.recurring, endType: 'count' } })}
                                 className="flex items-center justify-between w-full"
                               >
-                                <span className="text-[10px] font-black uppercase tracking-widest">Ends after occurrences</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest">Ends after occurrences</span>
                                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                                   formData.recurring.endType === 'count' ? 'border-electric-blue bg-electric-blue' : 'border-white/20'
                                 }`}>
@@ -935,9 +874,9 @@ export default function EventCalendar() {
                                     min="1"
                                     value={formData.recurring.endCount}
                                     onChange={(e) => setFormData({ ...formData, recurring: { ...formData.recurring, endCount: parseInt(e.target.value) } })}
-                                    className="w-24 glass-input dark:glass-input-dark border-electric-blue/30 rounded-xl px-4 py-2.5 text-sm font-black text-electric-blue dark:text-electric-blue-light focus:outline-none"
+                                    className="w-24 glass-input dark:glass-input-dark border-electric-blue/30 rounded-xl px-4 py-2.5 text-sm font-bold text-electric-blue dark:text-electric-blue-light focus:outline-none"
                                   />
-                                  <span className="text-[10px] font-black text-electric-blue dark:text-electric-blue-light uppercase tracking-widest">Times</span>
+                                  <span className="text-[10px] font-bold text-electric-blue dark:text-electric-blue-light uppercase tracking-widest">Times</span>
                                 </div>
                               )}
                             </div>
@@ -949,7 +888,7 @@ export default function EventCalendar() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Image URL (Optional)</label>
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Image URL (Optional)</label>
                   <div className="relative">
                     <ImageIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     <input
@@ -965,7 +904,7 @@ export default function EventCalendar() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-electric-blue hover:bg-electric-blue-dark text-white font-black py-4.5 rounded-[2rem] shadow-xl shadow-electric-blue/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] mt-6 border border-white/20 backdrop-blur-md uppercase tracking-widest text-xs"
+                  className="w-full bg-electric-blue hover:bg-electric-blue-dark text-white font-bold py-4.5 rounded-[2rem] shadow-xl shadow-electric-blue/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] mt-6 border border-white/20 backdrop-blur-md uppercase tracking-widest text-xs"
                 >
                   {isSubmitting ? (
                     editingEvent ? 'Updating Event...' : 'Creating Event...'

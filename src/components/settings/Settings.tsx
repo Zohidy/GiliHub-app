@@ -31,7 +31,7 @@ export default function Settings({ onBack, setActiveTab }: SettingsProps) {
           <ChevronLeft size={24} />
         </button>
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Settings</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight uppercase">Settings</h1>
           <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">App preferences & legal</p>
         </div>
       </div>

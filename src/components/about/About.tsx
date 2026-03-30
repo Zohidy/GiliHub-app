@@ -18,7 +18,7 @@ export default function About({ onBack }: AboutProps) {
           </button>
         )}
         <div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">About GiliHub</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight uppercase">About GiliHub</h2>
           <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest">Your island companion</p>
         </div>
       </div>
@@ -27,7 +27,7 @@ export default function About({ onBack }: AboutProps) {
         <div className="w-20 h-20 bg-electric-blue rounded-2xl flex items-center justify-center shadow-lg shadow-electric-blue/20 mb-4">
           <Logo className="text-white" size={40} />
         </div>
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-1">GiliHub</h1>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">GiliHub</h1>
         <p className="text-sm font-bold text-electric-blue dark:text-electric-blue-light uppercase tracking-widest mb-4">Version 1.0.0</p>
         <p className="text-slate-600 dark:text-slate-400 leading-relaxed max-w-md">
           Your ultimate companion for exploring the Gili Islands. Discover hidden gems, connect with fellow travelers, and make the most of your island escape.

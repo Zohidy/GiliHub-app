@@ -3,8 +3,7 @@
  * Handles external API calls for Weather, Currency, Tides, and Images.
  */
 
-// OpenWeatherMap API
-const OPENWEATHER_API_KEY = (import.meta as any).env.VITE_OPENWEATHER_API_KEY;
+// Open-Meteo API (Free, no key required)
 const GILI_TRAWANGAN_COORDS = { lat: -8.3507, lon: 116.0375 };
 
 export async function getWeatherData() {
@@ -15,6 +14,7 @@ export async function getWeatherData() {
     );
     if (!response.ok) throw new Error('Weather data fetch failed');
     const data = await response.json();
+    if (data.error) throw new Error(data.reason || 'API returned an error');
 
     // Map WMO weather codes to standard UI format
     const code = data.current.weather_code;
@@ -41,9 +41,7 @@ export async function getWeatherData() {
   }
 }
 
-// ExchangeRate-API
-const EXCHANGERATE_API_KEY = (import.meta as any).env.VITE_EXCHANGERATE_API_KEY;
-
+// ExchangeRate-API (Free tier, no key required for basic rates)
 export async function getExchangeRates(baseCurrency = 'IDR') {
   try {
     // Using ExchangeRate-API free tier (No API key required, supports CORS)
@@ -79,8 +77,12 @@ export async function getIslandImages(query = 'Gili Trawangan', count = 5) {
     // Return mock data if no API key
     return Array(count).fill(null).map((_, i) => ({
       id: `mock-${i}`,
-      urls: { regular: `https://picsum.photos/seed/gili${i}/800/600` },
-      alt_description: 'Gili Trawangan scenery'
+      urls: { 
+        regular: `https://picsum.photos/seed/gili${i}/800/600`,
+        small: `https://picsum.photos/seed/gili${i}/400/300`
+      },
+      alt_description: 'Gili Trawangan scenery',
+      user: { name: 'GiliHub Explorer' }
     }));
   }
   try {
@@ -94,8 +96,12 @@ export async function getIslandImages(query = 'Gili Trawangan', count = 5) {
     // Return mock data on error
     return Array(count).fill(null).map((_, i) => ({
       id: `mock-${i}`,
-      urls: { regular: `https://picsum.photos/seed/gili${i}/800/600` },
-      alt_description: 'Gili Trawangan scenery'
+      urls: { 
+        regular: `https://picsum.photos/seed/gili${i}/800/600`,
+        small: `https://picsum.photos/seed/gili${i}/400/300`
+      },
+      alt_description: 'Gili Trawangan scenery',
+      user: { name: 'GiliHub Explorer' }
     }));
   }
 }
@@ -107,9 +113,9 @@ export const fetchYouTubeVideos = async (query: string = 'Gili Trawangan') => {
   if (!YOUTUBE_API_KEY) {
     // Return mock data if no API key
     return [
-      { id: { videoId: 'mock1' }, snippet: { title: 'Gili Trawangan Guide', thumbnails: { medium: { url: 'https://picsum.photos/seed/yt1/320/180' } } } },
-      { id: { videoId: 'mock2' }, snippet: { title: 'Snorkeling with Turtles', thumbnails: { medium: { url: 'https://picsum.photos/seed/yt2/320/180' } } } },
-      { id: { videoId: 'mock3' }, snippet: { title: 'Best Beaches in Gili', thumbnails: { medium: { url: 'https://picsum.photos/seed/yt3/320/180' } } } },
+      { id: { videoId: 'mock1' }, snippet: { title: 'Gili Trawangan Guide', channelTitle: 'GiliHub', thumbnails: { high: { url: 'https://picsum.photos/seed/yt1/320/180' }, medium: { url: 'https://picsum.photos/seed/yt1/320/180' } } } },
+      { id: { videoId: 'mock2' }, snippet: { title: 'Snorkeling with Turtles', channelTitle: 'GiliHub', thumbnails: { high: { url: 'https://picsum.photos/seed/yt2/320/180' }, medium: { url: 'https://picsum.photos/seed/yt2/320/180' } } } },
+      { id: { videoId: 'mock3' }, snippet: { title: 'Best Beaches in Gili', channelTitle: 'GiliHub', thumbnails: { high: { url: 'https://picsum.photos/seed/yt3/320/180' }, medium: { url: 'https://picsum.photos/seed/yt3/320/180' } } } },
     ];
   }
   try {
@@ -122,9 +128,9 @@ export const fetchYouTubeVideos = async (query: string = 'Gili Trawangan') => {
     console.error('YouTube API error:', error);
     // Return mock data on error
     return [
-      { id: { videoId: 'mock1' }, snippet: { title: 'Gili Trawangan Guide', thumbnails: { medium: { url: 'https://picsum.photos/seed/yt1/320/180' } } } },
-      { id: { videoId: 'mock2' }, snippet: { title: 'Snorkeling with Turtles', thumbnails: { medium: { url: 'https://picsum.photos/seed/yt2/320/180' } } } },
-      { id: { videoId: 'mock3' }, snippet: { title: 'Best Beaches in Gili', thumbnails: { medium: { url: 'https://picsum.photos/seed/yt3/320/180' } } } },
+      { id: { videoId: 'mock1' }, snippet: { title: 'Gili Trawangan Guide', channelTitle: 'GiliHub', thumbnails: { high: { url: 'https://picsum.photos/seed/yt1/320/180' }, medium: { url: 'https://picsum.photos/seed/yt1/320/180' } } } },
+      { id: { videoId: 'mock2' }, snippet: { title: 'Snorkeling with Turtles', channelTitle: 'GiliHub', thumbnails: { high: { url: 'https://picsum.photos/seed/yt2/320/180' }, medium: { url: 'https://picsum.photos/seed/yt2/320/180' } } } },
+      { id: { videoId: 'mock3' }, snippet: { title: 'Best Beaches in Gili', channelTitle: 'GiliHub', thumbnails: { high: { url: 'https://picsum.photos/seed/yt3/320/180' }, medium: { url: 'https://picsum.photos/seed/yt3/320/180' } } } },
     ];
   }
 };

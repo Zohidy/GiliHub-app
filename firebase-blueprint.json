@@ -50,16 +50,42 @@
       "type": "object",
       "properties": {
         "name": { "type": "string" },
-        "type": { "type": "string", "enum": ["sunset", "clinic", "police", "bike", "snorkeling", "port", "restaurant"] },
-        "position": { 
-          "type": "array",
-          "items": { "type": "number" },
-          "description": "Latitude and Longitude"
-        },
+        "type": { "type": "string", "enum": ["sunset", "clinic", "police", "bike", "snorkeling", "port", "restaurant", "diving"] },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
         "desc": { "type": "string" },
-        "createdBy": { "type": "string", "description": "UID of the user who created this" }
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "type", "position", "desc", "createdBy"]
+      "required": ["name", "type", "lat", "lng", "desc", "createdBy", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "User rating and review for a target",
+      "type": "object",
+      "properties": {
+        "targetId": { "type": "string" },
+        "targetType": { "type": "string", "enum": ["service", "location", "event", "island"] },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string", "format": "uri" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["targetId", "targetType", "userId", "userName", "rating", "comment", "createdAt"]
+    },
+    "Favorite": {
+      "title": "Favorite",
+      "description": "User's favorite item",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "targetId": { "type": "string" },
+        "targetType": { "type": "string", "enum": ["service", "location", "event"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "targetId", "targetType", "createdAt"]
     },
     "BookingItem": {
       "title": "BookingItem",
@@ -216,6 +242,21 @@
         "providerId": { "type": "string" }
       },
       "required": ["serviceId", "serviceTitle", "userId", "userName", "date", "status", "createdAt", "providerId"]
+    },
+    "Trip": {
+      "title": "Trip",
+      "description": "A user-generated trip itinerary",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "dates": { "type": "string" },
+        "activities": { "type": "string" },
+        "accommodation": { "type": "string" },
+        "itinerary": { "type": "object", "description": "JSON structure of the itinerary" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "itinerary", "createdAt"]
     }
   },
   "firestore": {
@@ -266,6 +307,18 @@
     "/follows/{followId}": {
       "schema": { "$ref": "#/entities/Follow" },
       "description": "Follower/Following relationships"
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "User ratings and reviews"
+    },
+    "/favorites/{favoriteId}": {
+      "schema": { "$ref": "#/entities/Favorite" },
+      "description": "User's favorite items"
+    },
+    "/trips/{tripId}": {
+      "schema": { "$ref": "#/entities/Trip" },
+      "description": "User-generated trip itineraries"
     }
   }
 }
